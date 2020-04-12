@@ -2,30 +2,24 @@
   <ion-router-outlet main></ion-router-outlet>
 
 
-  <ion-menu side="start" menuId="first">
+  <ion-menu *ngIf="usuario" side="start" menuId="first">
     <ion-content>
 
       <div style="padding-top:20px;padding-bottom:20px;border-bottom:0px solid #eee">
         <ion-item (click)="openPage('usuario')" lines="none">
-          <img slot="start" [src]="_auth.usuario?.img.url"
+          <img slot="start" [src]="usuario.img.url"
             style="width:55px;height:55px;border:1px solid #eee;border-radius:50%;object-fit:cover">
           <div>
             <div
               style="height:20px;overflow:hidden;margin-top:10px;color:#222;font-weight:600;text-transform:capitalize">
-              {{_auth.usuario?.nombre}}
+              {{usuario.nombre}}
             </div>
             <div>
               Ver perfil
             </div>
           </div>
         </ion-item>
-        <!-- <ion-item lines="none">
-          <img slot="start" src="assets/pro.svg" style="width:80px">
-          <img slot="start" src="assets/pro2.svg" style="width:40px">
-          Cuenta pro
-        </ion-item> -->
       </div>
-
 
 
 
@@ -55,31 +49,17 @@
         Ayuda
       </ion-item>
 
-      <!-- <ion-item (click)="logout()" lines="none">
-          <ion-icon slot="start" name="log-out"></ion-icon>
-          Cerrar sesión
-        </ion-item> -->
 
 
-      <!-- <div
-        style="margin-top:20px;width:100%;padding:15px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="margin-right:15px">
-          <div style="font-size:20px">
-            <div style="color:#888">
-              Activa
-            </div>
-            <div style="color:#555;margin-bottom:5px;">
-              Tu cuenta premium
-            </div>
-            <div style="font-size:15px;color:#888">
-              Desbloquea y obtén ventajas de más funciones
-            </div>
-          </div>
-        </div>
-        <ion-icon name="ios-arrow-forward" style="color:#999;font-size:22px"></ion-icon>
-      </div> -->
+      hmmmmm
 
-      <div *ngIf="false"
+      <ion-item (click)="logout()" lines="none">
+        <ion-icon slot="start" name="log-out"></ion-icon>
+        Cerrar sesión
+      </ion-item>
+
+
+      <div
         style="margin-top:20px;width:100%;padding:15px;display:flex;justify-content:space-between;align-items:center;">
         <div style="margin-right:15px">
           <div style="font-size:20px">
@@ -99,7 +79,7 @@
 
     </ion-content>
 
-    <ion-footer *ngIf="false" no-border style="width:100%;display:flex;justify-content:center;padding:15px">
+    <ion-footer no-border style="width:100%;display:flex;justify-content:center;padding:15px">
       <div
         style="border-radius:25px;font-size:18px;padding:10px;padding-left:25px;padding-right:25px;background:#9EDF1F;color:white">
         Convierte en Rider

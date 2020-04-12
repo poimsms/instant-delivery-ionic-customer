@@ -4,6 +4,10 @@ import { AuthService } from 'src/app/services/auth.service';
 import { ToastController } from '@ionic/angular';
 import { AlertController } from '@ionic/angular';
 
+import {Store} from '@ngrx/store'
+import * as fromAuth from '../../store/reducers/auth';
+import { Observable } from 'rxjs';
+
 
 @Component({
   selector: 'app-login-verify',
@@ -14,13 +18,15 @@ export class LoginVerifyPage implements OnInit {
   codigo: string;
   counter = 90;
   textTime = '1:30';
-  isLoading = false;
+  isAuthenticated$: Observable<boolean>;
+  isLoading: boolean;
 
   constructor(
     public _auth: AuthService,
     private router: Router,
     private toastCtrl: ToastController,
-    public alertController: AlertController
+    public alertController: AlertController,
+    private store: Store<fromAuth.State>
   ) { }
 
   ngOnInit() {
@@ -32,6 +38,8 @@ export class LoginVerifyPage implements OnInit {
   }
 
   checkCode() {
+
+    this.isAuthenticated$ = this.store.select(fromAuth.getIsAuth)
 
     if (this.codigo.length < 4) {
       return;
@@ -74,33 +82,6 @@ export class LoginVerifyPage implements OnInit {
       }
 
     });
-  }
-
-  reenviar() {
-    // console.log('entrooo')
-    // const body = {
-    //   telefonoId: this._auth.idPhone,
-    //   telefono: this._auth.telefono
-    // };
-    // console.log(body);
-
-    // this.isLoading = true;
-
-    // this._auth.phoneResendCode(body).then((res: any) => {
-    //   console.log(res)
-
-    //   this.isLoading = false;
-
-    //   if (!res.ok) {
-    //     return;
-    //   }
-
-    //   this.codigo = null;
-    //   this._auth.idPhone = res.result.request_id;
-    //   this.counter = 90;
-    //   this.textTime = '1:30';
-    //   this.cuentaAtras();
-    // });
   }
 
   cuentaAtras() {

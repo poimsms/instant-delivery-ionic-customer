@@ -13,6 +13,10 @@ import { StatusBar } from '@ionic-native/status-bar/ngx';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 
+import { StoreModule } from '@ngrx/store';
+import { reducers } from './app.reducers';
+
+
 import { AngularFireModule } from '@angular/fire';
 import { AngularFirestoreModule } from '@angular/fire/firestore';
 import { FCM } from '@ionic-native/fcm/ngx';
@@ -42,7 +46,6 @@ import { PayComponent } from './components/pay/pay.component';
 import { BloqueadoComponent } from './components/bloqueado/bloqueado.component';
 import { EditarCamposComponent } from './components/editar-campos/editar-campos.component';
 import { PoliticasComponent } from './components/politicas/politicas.component';
-// import { MapaComponent } from './components/mapa/mapa.component';
 import { UbicacionComponent } from './components/ubicacion/ubicacion.component';
 import { SeleccionarHoraComponent } from './components/seleccionar-hora/seleccionar-hora.component';
 import { OpcionesComponent } from './components/opciones/opciones.component';
@@ -59,7 +62,6 @@ import { RiderComponent } from './components/rider/rider.component';
     BloqueadoComponent,
     EditarCamposComponent,
     PoliticasComponent,
-    // MapaComponent,
     UbicacionComponent,
     SeleccionarHoraComponent,
     OpcionesComponent,
@@ -73,7 +75,6 @@ import { RiderComponent } from './components/rider/rider.component';
     BloqueadoComponent,
     EditarCamposComponent,
     PoliticasComponent,
-    // MapaComponent,
     UbicacionComponent,
     SeleccionarHoraComponent,
     OpcionesComponent,
@@ -91,7 +92,8 @@ import { RiderComponent } from './components/rider/rider.component';
       driverOrder: ['indexeddb', 'sqlite', 'websql']
     }),
     IonicModule.forRoot(),
-    AppRoutingModule
+    AppRoutingModule,
+    StoreModule.forRoot(reducers)
   ],
   providers: [
     StatusBar,

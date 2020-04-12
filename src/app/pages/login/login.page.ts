@@ -26,15 +26,14 @@ export class LoginPage implements OnInit {
   passwordType = 'password';
   politicas = false;
 
+
   constructor(
     private _auth: AuthService,
     public toastController: ToastController,
     private router: Router,
     public modalController: ModalController,
-    public alertController: AlertController
-  ) {
-    this._auth.authState
-  }
+    public alertController: AlertController,
+  ) {  }
 
   ngOnInit() {
   }

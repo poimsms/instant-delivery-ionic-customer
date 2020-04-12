@@ -4,6 +4,10 @@ import { Storage } from "@ionic/storage";
 import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { BehaviorSubject } from "rxjs";
 import { ConfigService } from './config.service';
+import { Store } from '@ngrx/store';
+import * as fromApp from '../app.reducers';
+
+import * as Auth from '../store/actions/auth';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +16,6 @@ export class AuthService {
 
   telefono: string;
   id: string;
-  authState = new BehaviorSubject({ isAuth: false, usuario: {}, token: null, readyState: false });
 
   usuario: any;
   token: string;
@@ -26,7 +29,8 @@ export class AuthService {
     private http: HttpClient,
     private platform: Platform,
     private storage: Storage,
-    private _config: ConfigService
+    private _config: ConfigService,
+    private store: Store<{ ui: fromApp.State }>
   ) { }
 
   phoneNumberSendRequest(body) {
@@ -51,7 +55,7 @@ export class AuthService {
 
   logout() {
     this.removeStorage();
-    this.authState.next({ isAuth: false, usuario: null, token: null, readyState: true });
+    this.store.dispatch(new Auth.SetUnauthenticated())
   }
 
   saveFlowOrderStorage(order) {
@@ -74,14 +78,15 @@ export class AuthService {
 
     if (this.platform.is("cordova")) {
       this.storage.set("authData", JSON.stringify(authData));
-      this.authState.next({ isAuth: true, usuario, token, readyState: true });
     } else {
       localStorage.setItem("authData", JSON.stringify(authData));
-      this.authState.next({ isAuth: true, usuario, token, readyState: true  });
     }
+        
+    const payload = { usuario, token }
+    this.store.dispatch(new Auth.SetAuthenticated(payload))
   }
 
-  storageTry() {
+  getNativeStorage() {
     this.storage.get('authData').then(res => {
 
       if (res) {
@@ -90,24 +95,23 @@ export class AuthService {
         const uid = JSON.parse(res).uid;
 
         this.getUser(token, uid).then(usuario => {
-          this.usuario = usuario;
-          this.token = token;
-          this.authState.next({ isAuth: true, usuario, token, readyState: true  });
+          const payload = { usuario, token }
+          this.store.dispatch(new Auth.SetAuthenticated(payload))
         });
 
       } else {
-        this.authState.next({ isAuth: false, usuario: null, token: null, readyState: true  });
+        this.store.dispatch(new Auth.SetUnauthenticated())
       }
 
       this.storage_counter = 0;
 
     }).catch(() => {
-      
+
       this.storage_counter++;
 
       if (this.storage_counter <= 3) {
         setTimeout(() => {
-          this.storageTry();
+          this.getNativeStorage();
         }, 200);
       } else {
         this.storage_counter = 0;
@@ -117,7 +121,7 @@ export class AuthService {
 
   loadStorage() {
     if (this.platform.is('cordova')) {
-      this.storageTry();
+      this.getNativeStorage();
     } else {
       if (localStorage.getItem('authData')) {
 
@@ -126,13 +130,12 @@ export class AuthService {
         const uid = JSON.parse(res).uid;
 
         this.getUser(token, uid).then(usuario => {
-          this.usuario = usuario;
-          this.token = token;
-          this.authState.next({ isAuth: true, usuario, token, readyState: true  });
+          const payload = { usuario, token }
+          this.store.dispatch(new Auth.SetAuthenticated(payload))
         });
 
       } else {
-        this.authState.next({ isAuth: false, usuario: null, token: null, readyState: true  });
+        this.store.dispatch(new Auth.SetUnauthenticated())
       }
     }
   }

@@ -10,6 +10,10 @@ import { FcmService } from './services/fcm.service';
 import { ConfigService } from './services/config.service';
 import { Market } from '@ionic-native/market/ngx';
 import { ControlService } from './services/control.service';
+import { Store } from '@ngrx/store';
+import * as fromAuth from './store/reducers/auth';
+import { Observable } from 'rxjs';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -18,10 +22,7 @@ import { ControlService } from './services/control.service';
 export class AppComponent {
 
   usuario: any;
-  token: string;
-  isAuth: boolean;
-  oktodo = true;
-  entro = false;
+  isAuth = false;
 
   constructor(
     private platform: Platform,
@@ -34,7 +35,8 @@ export class AppComponent {
     private _fcm: FcmService,
     private _config: ConfigService,
     public alertController: AlertController,
-    private _control: ControlService
+    private _control: ControlService,
+    private store: Store<fromAuth.State>
   ) {
     this.initializeApp();
   }
@@ -62,14 +64,11 @@ export class AppComponent {
 
         } else {
 
-          this._auth.authState.subscribe((data: any) => {
-            if (data.isAuth && data.readyState) {
+          this.store.select(fromAuth.getAuthState).subscribe(state => {
 
-              this.usuario = data.usuario;
-              this.token = data.token;
-              this.isAuth = true;
+            if (state.isAuth) {
 
-              console.log(data)
+              this.usuario = state.usuario;
 
               this._fcm.getToken(this.usuario._id);
               this._fcm.onTokenRefresh(this.usuario._id);
@@ -83,10 +82,10 @@ export class AppComponent {
                 this.router.navigateByUrl('home');
               }
 
-            } else if (data.readyState) {
+            } else {
               this.router.navigateByUrl('login');
             }
-          });
+          })
         }
       });
     });
@@ -121,6 +120,4 @@ export class AppComponent {
     this.menu.toggle();
     this.router.navigateByUrl('login');
   }
-
-
 }
