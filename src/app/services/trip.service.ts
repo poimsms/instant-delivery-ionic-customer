@@ -70,6 +70,10 @@ export class TripService {
 
   }
 
+  loadRate() {
+
+  }
+
   rate() {
     return this.rate$;
   }
@@ -84,5 +88,9 @@ export class TripService {
 
   gps() {
     return this.rate$;
+  }
+
+  cancelTrip(body) {
+
   }
 }

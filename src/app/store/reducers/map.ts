@@ -60,6 +60,11 @@ export function authReducer(state: State = initialState, action: MapActions) {
                 ...initialState,
                 clearMap: true
             }
+        case SET_ACTIVE_GPS:
+            return {
+                ...initialState,
+                gpsActived: true
+            }
         default:
             return state;
     }

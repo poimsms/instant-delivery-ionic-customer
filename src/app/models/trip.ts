@@ -7,7 +7,7 @@ export default interface Trip {
     times: Object;
     step: Number;
     distance: Number;
-    time: String;
+    time: Number;
     price: Number;
     vehicle: String;
     payment_method: String;

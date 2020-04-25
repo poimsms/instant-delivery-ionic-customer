@@ -10,7 +10,7 @@ import {
     START_TRIP,
     UPDATE_TRIP_STEP,
     SHOW_TRIP_OPTIONS,
-    CANCEL_TRIP
+    INIT_TRIP
 } from '../actions/trip';
 
 
@@ -63,7 +63,7 @@ export function authReducer(state: Trip = initialState, action: MapActions) {
                 showOptions: !state.showOptions
             }
 
-        case CANCEL_TRIP:
+        case INIT_TRIP:
             return {
                 initialState
             }

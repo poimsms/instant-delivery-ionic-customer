@@ -8,11 +8,14 @@ import { RatingComponent } from 'src/app/components/rating/rating.component';
 import { PayComponent } from 'src/app/components/pay/pay.component';
 import { CallNumber } from '@ionic-native/call-number/ngx';
 import { Store } from '@ngrx/store';
-import * as fromMap from '../../store/reducers/map';
 import messages from '../../utils/messages';
 import { RidersService } from 'src/app/services/riders.service';
 import markerImages from 'src/app/utils/marker-urls';
 import { TripService } from 'src/app/services/trip.service';
+
+import * as fromMap from '../../store/reducers/map';
+import * as Trip from '../../store/actions/trip';
+import * as Map from '../../store/actions/map';
 
 declare var google: any;
 
@@ -37,33 +40,19 @@ export class HomePage implements OnInit, OnDestroy {
   graciasPorComprar = false;
   isLoading = false;
 
-  gpsIcon = {
-    url: markerImages.gps,
-    scaledSize: new google.maps.Size(60, 60),
-    origin: new google.maps.Point(0, 0),
-    anchor: new google.maps.Point(30, 30)
-  };
+  setIcon = (icon, scale, origin, anchor) => {
+    return {
+      url: icon,
+      scaledSize: new google.maps.Size(scale[0], scale[1]),
+      origin: new google.maps.Point(origin[0], origin[1]),
+      anchor: new google.maps.Point(anchor[0], anchor[1])
+    }
+  }
 
-  riderIcon = {
-    url: markerImages.rider,
-    scaledSize: new google.maps.Size(40, 40),
-    origin: new google.maps.Point(0, 0),
-    anchor: new google.maps.Point(0, 32)
-  };
-
-  originIcon = {
-    url: markerImages.origin,
-    scaledSize: new google.maps.Size(34, 34),
-    origin: new google.maps.Point(0, 0),
-    anchor: new google.maps.Point(16, 34)
-  };
-
-  destinationIcon = {
-    url: markerImages.destination,
-    scaledSize: new google.maps.Size(36, 36),
-    origin: new google.maps.Point(0, 0),
-    anchor: new google.maps.Point(4, 36)
-  };
+  gpsIcon = this.setIcon(markerImages.gps, [60, 60], [0, 0], [30, 30]);
+  riderIcon = this.setIcon(markerImages.rider, [40, 40], [0, 0], [0, 32]);
+  originIcon = this.setIcon(markerImages.gps, [34, 34], [0, 0], [16, 34]);
+  destinationIcon = this.setIcon(markerImages.destination, [36, 36], [0, 0], [4, 36]);
 
   markers = [
     { type: 'origin', icon: this.originIcon, ref: null },
@@ -86,12 +75,11 @@ export class HomePage implements OnInit, OnDestroy {
     private _rider: RidersService,
     private _trip: TripService
   ) {
+
+    let options = { suppressMarkers: true, polylineOptions: { strokeColor: '#404042' } }
+
     this.service = new google.maps.DistanceMatrixService();
-    this.directionsDisplay = new google.maps.DirectionsRenderer({
-      suppressMarkers: true, polylineOptions: {
-        strokeColor: '#404042'
-      }
-    });
+    this.directionsDisplay = new google.maps.DirectionsRenderer(options);
     this.directionsService = new google.maps.DirectionsService();
   }
 
@@ -110,51 +98,6 @@ export class HomePage implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.subs.forEach(sub => sub.unsubscribe())
   }
-
-
-  update(msg, model) {
-
-    switch (msg.type) {
-      case MSGS.SET_UP_TRIP:
-        const { origin, destination, prices, times, distance } = msg;
-
-        const trip = model.trip;
-        trip.status = this.STATUS.IN_SETUP;
-
-        return { ...model, origin, destination, prices, times, distance, trip }
-
-      case MSGS.SET_VEHICLE:
-        const { vehicle } = msg;
-        return { ...model, vehicle }
-
-      case MSGS.SET_PAYMENT_METHOD:
-        const { payment_method } = msg;
-        return { ...model, payment_method }
-
-      case MSGS.START_TRIP:
-        const trip = model.trip;
-        const { origin, destination, prices, times, distance } = msg;
-
-        trip.status = this.STATUS.IN_PROGRESS;
-        return { ...model, trip }
-
-      case MSGS.UPDATE_TRIP_STEP:
-        const { step } = msg;
-        const trip = model.trip;
-        trip.step = step;
-        return { ...model, trip }
-
-      case MSGS.SHOW_TRIP_OPTIONS:
-        const trip = model.trip;
-        trip.showOptions = true;
-        return { ...model, trip }
-
-      case MSGS.CANCEL_TRIP:
-        return this.initModel
-    }
-
-  }
-
 
   subToMap() {
     this.store.select(fromMap.getMapState).subscribe(async (state: any) => {
@@ -177,7 +120,7 @@ export class HomePage implements OnInit, OnDestroy {
 
         this.store.dispatch(new Trip.StartTrip(payload))
 
-        this.displayRoute(state.origin, state.destination)
+        this.displayRoute(state.origin, state.destination, state.gpsActived)
 
         this.isLoading = true;
       }
@@ -193,7 +136,6 @@ export class HomePage implements OnInit, OnDestroy {
     });
   }
 
-
   riderHandler(data) {
 
     const { riderCoors, startTracking, stopTracking } = data;
@@ -202,7 +144,7 @@ export class HomePage implements OnInit, OnDestroy {
       this.displayMarker(riderCoors, 'rider');
 
     if (stopTracking) {
-      this.store.dispatch(new Map.ClearMap);
+      this.store.dispatch(new Map.InitMap);
       this._trip.loadRate();
     }
   }
@@ -229,52 +171,40 @@ export class HomePage implements OnInit, OnDestroy {
     const { data } = await modal.onWillDismiss();
 
     if (!data) {
-      return this.resetMapa();
+      return this.cancelOnSetUpTrip();
     }
 
     if (data.status === messages.payment.SUCCESS) {
 
       this.directionsDisplay.setMap(null);
 
-      this.service = new google.maps.DistanceMatrixService();
-      this.directionsDisplay = new google.maps.DirectionsRenderer({
-        suppressMarkers: true, polylineOptions: {
-          strokeColor: '#404042'
-        }
-      });
-      this.directionsService = new google.maps.DirectionsService();
-
-      this.loadMap({ lat: 0, lng: 0 });
-
       this.graciasPorComprar = true;
 
       setTimeout(() => {
         this.graciasPorComprar = false;
-        this._otros.getPedido('buscar_pedido_activo_mas_reciente');
+        const payload = {}
+        this.store.dispatch(new Map.DisplayRoute())
+        this.store.dispatch(new Trip.StartTrip(payload))
       }, 2000);
-
-      this._data.getCuponActivo(this._auth.user._id);
-
-      this._fcm.sendPushNotification(data.riderID, 'confirmacion-pedido');
-
     }
 
     if (data.status === messages.payment.FAIL) {
-      this.alert_pedido_cancelado();
-    }
-
-    if (data.status === messages.payment.TIMEOUT) {
-      this.resetMapa();
+      this.cancelOnSetUpTrip();
     }
   }
 
-  async cancelTrip() {
-    const dta = {
-      id: 'asdsa'
-    }
+  async cancelOnSetUpTrip() {
+    this.alert_pedido_cancelado();
+    this.store.dispatch(new Map.InitMap)
+    this.store.dispatch(new Trip.InitTrip)
+  }
+
+  async cancelOngoingTrip() {
+    this.alert_pedido_cancelado();
+    const data = {};
     await this._trip.cancelTrip(data);
-    this.store.dispatch(new Trip.CancelTrip);
-    this.store.dispatch(new Map.ClearMap);
+    this.store.dispatch(new Map.InitMap)
+    this.store.dispatch(new Trip.InitTrip)
   }
 
   openPayMethod() {
@@ -285,8 +215,8 @@ export class HomePage implements OnInit, OnDestroy {
     this.router.navigateByUrl('direcciones');
   }
 
-  vehicleToggle(type) {
-    this.model.vehicle = type;
+  vehicleToggle(vehicle) {
+    this.model.vehicle = vehicle;
   }
 
   loadMap(coors) {
@@ -299,7 +229,7 @@ export class HomePage implements OnInit, OnDestroy {
     this.directionsDisplay.setMap(this.map);
   }
 
-  displayRoute(origen, destino) {
+  displayRoute(origen, destino, gps) {
 
     this.directionsDisplay.setMap(this.map);
     const origenLatLng = new google.maps.LatLng(origen.lat, origen.lng);
@@ -314,8 +244,9 @@ export class HomePage implements OnInit, OnDestroy {
       this.isLoading = false;
     });
 
-    if (this.gpsMarker) {
-      this.gpsMarker.setMap(null);
+    if (gps) {
+      const marker = this.markers.find(marker => marker.type === 'gps');
+      marker.ref.setMap(null);
     }
 
     this.displayMarker({ lat: origen.lat, lng: origen.lng }, 'origen');
@@ -335,7 +266,6 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   removeMarkers() {
-
     this.markers.forEach(marker => {
       if (marker.ref) marker.ref.setMap(null)
     });
@@ -350,9 +280,7 @@ export class HomePage implements OnInit, OnDestroy {
           text: 'Ok',
           role: 'cancel',
           cssClass: 'secondary',
-          handler: (blah) => {
-            this.resetMapaAndRider();
-          }
+          handler: (blah) => {}
         }
       ]
     });
@@ -376,7 +304,7 @@ export class HomePage implements OnInit, OnDestroy {
         {
           text: 'Ok',
           handler: () => {
-            this.cancelarViaje();
+            this.cancelOngoingTrip();
           }
         }
       ]
@@ -392,14 +320,6 @@ export class HomePage implements OnInit, OnDestroy {
       position: 'middle'
     });
     toast.present();
-  }
-
-  openPage(page) {
-    this._control.riderID = this.rider._id;
-    this._control.pedido = this.pedido;
-    this._control.pedidoID = this.pedido._id;
-
-    this.router.navigateByUrl(page);
   }
 
   presentCompraExitosa() {

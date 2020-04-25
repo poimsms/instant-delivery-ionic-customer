@@ -6,15 +6,15 @@ export const SET_PAYMENT_METHOD = '[Trip] SET_PAYMENT_METHOD'
 export const START_TRIP = '[Trip] START_TRIP'
 export const UPDATE_TRIP_STEP = '[Trip] UPDATE_TRIP_STEP'
 export const SHOW_TRIP_OPTIONS = '[Trip] SHOW_TRIP_OPTIONS'
-export const CANCEL_TRIP = '[Trip] CANCEL_TRIP'
+export const INIT_TRIP = '[Trip] INIT_TRIP'
 
 
 export class ShowTripOptions implements Action {
     readonly type = SHOW_TRIP_OPTIONS
 }
 
-export class CancelTrip implements Action {
-    readonly type = CANCEL_TRIP
+export class InitTrip implements Action {
+    readonly type = INIT_TRIP
 }
 
 export class SetPaymentMethod implements Action {
@@ -46,7 +46,7 @@ export type MapActions =
     UpdateTripStep |
     ShowTripOptions |
     SetPaymentMethod |
-    CancelTrip |
+    InitTrip |
     StartTrip |
     SetUpTrip |
     SetVehicle;
