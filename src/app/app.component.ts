@@ -50,9 +50,7 @@ export class AppComponent {
 
       this._config.checkUpdate().then((data: any) => {
 
-        setTimeout(() => {
-          this._auth.loadStorage();
-        }, 500);
+        setTimeout(() => this._auth.loadStorage(), 500);
 
         if (data.forceUpgrade) {
 
@@ -68,7 +66,7 @@ export class AppComponent {
 
             if (state.isAuth) {
 
-              this.usuario = state.usuario;
+              this.usuario = state.user;
 
               this._fcm.getToken(this.usuario._id);
               this._fcm.onTokenRefresh(this.usuario._id);

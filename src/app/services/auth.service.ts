@@ -5,8 +5,7 @@ import { HttpClient, HttpHeaders } from "@angular/common/http";
 import { BehaviorSubject } from "rxjs";
 import { ConfigService } from './config.service';
 import { Store } from '@ngrx/store';
-import * as fromApp from '../app.reducers';
-
+import * as fromAuth from '../store/reducers/auth';
 import * as Auth from '../store/actions/auth';
 
 @Injectable({
@@ -14,15 +13,15 @@ import * as Auth from '../store/actions/auth';
 })
 export class AuthService {
 
-  telefono: string;
-  id: string;
+  phoneCode: {
+    type: string,
+    id: string,
+    phone: number
+  };
 
-  usuario: any;
+  sign_up_token: string;
   token: string;
-
-  tipo: string;
-  tokenPhone: string;
-
+  user: any;
   storage_counter = 0;
 
   constructor(
@@ -30,8 +29,10 @@ export class AuthService {
     private platform: Platform,
     private storage: Storage,
     private _config: ConfigService,
-    private store: Store<{ ui: fromApp.State }>
-  ) { }
+    private store: Store<fromAuth.State>
+  ) {
+    this.store.select(fromAuth.getAuthState)
+  }
 
   phoneNumberSendRequest(body) {
     const url = `${this._config.apiURL}/usuarios/request-code`;
@@ -70,58 +71,40 @@ export class AuthService {
     }
   }
 
-  saveStorage(token, usuario) {
+  saveStorage(token, user) {
 
-    const authData = { token, uid: usuario._id };
-    this.usuario = usuario;
-    this.token = token;
+    const authData = { token, uid: user._id };
 
     if (this.platform.is("cordova")) {
       this.storage.set("authData", JSON.stringify(authData));
     } else {
       localStorage.setItem("authData", JSON.stringify(authData));
     }
-        
-    const payload = { usuario, token }
+
+    const payload = { user, token }
     this.store.dispatch(new Auth.SetAuthenticated(payload))
   }
 
   getNativeStorage() {
     this.storage.get('authData').then(res => {
 
-      if (res) {
-
-        const token = JSON.parse(res).token;
-        const uid = JSON.parse(res).uid;
-
-        this.getUser(token, uid).then(usuario => {
-          const payload = { usuario, token }
-          this.store.dispatch(new Auth.SetAuthenticated(payload))
-        });
-
-      } else {
-        this.store.dispatch(new Auth.SetUnauthenticated())
+      if (!res) {
+        return this.store.dispatch(new Auth.SetUnauthenticated());
       }
 
-      this.storage_counter = 0;
+      const token = JSON.parse(res).token;
+      const uid = JSON.parse(res).uid;
 
-    }).catch(() => {
-
-      this.storage_counter++;
-
-      if (this.storage_counter <= 3) {
-        setTimeout(() => {
-          this.getNativeStorage();
-        }, 200);
-      } else {
-        this.storage_counter = 0;
-      }
-    })
+      this.getUser(token, uid).then(user => {
+        const payload = { user, token }
+        this.store.dispatch(new Auth.SetAuthenticated(payload))
+      });
+    });
   }
 
   loadStorage() {
     if (this.platform.is('cordova')) {
-      this.getNativeStorage();
+      setTimeout(() => this.getNativeStorage(), 500);
     } else {
       if (localStorage.getItem('authData')) {
 
@@ -129,8 +112,8 @@ export class AuthService {
         const token = JSON.parse(res).token;
         const uid = JSON.parse(res).uid;
 
-        this.getUser(token, uid).then(usuario => {
-          const payload = { usuario, token }
+        this.getUser(token, uid).then(user => {
+          const payload = { user, token }
           this.store.dispatch(new Auth.SetAuthenticated(payload))
         });
 
@@ -147,24 +130,24 @@ export class AuthService {
   }
 
   updateUser(body) {
-    const url = `${this._config.apiURL}/usuarios/update?id=${this.usuario._id}`;
+    const url = `${this._config.apiURL}/usuarios/update?id=${this.user._id}`;
     const headers = new HttpHeaders({ token: this.token, version: this._config.version });
     return this.http.put(url, body, { headers }).toPromise();
   }
 
   refreshUser() {
     return new Promise((resolve, reject) => {
-      const url = `${this._config.apiURL}/usuarios/get-one?id=${this.usuario._id}`;
+      const url = `${this._config.apiURL}/usuarios/get-one?id=${this.user._id}`;
       const headers = new HttpHeaders({ token: this.token, version: this._config.version });
-      this.http.get(url, { headers }).toPromise().then(usuario => {
-        this.usuario = usuario;
-        resolve(usuario);
+      this.http.get(url, { headers }).toPromise().then(user => {
+        this.user = user;
+        resolve(user);
       });
     });
   }
 
   updatePassword(body) {
-    const url = `${this._config.apiURL}/usuarios/update-password?id=${this.usuario._id}`;
+    const url = `${this._config.apiURL}/usuarios/update-password?id=${this.user._id}`;
     const headers = new HttpHeaders({ token: this.token, version: this._config.version });
     return this.http.put(url, body, { headers }).toPromise();
   }

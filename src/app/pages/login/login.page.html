@@ -10,14 +10,14 @@
   </div>
 
 
-  <div *ngIf="signUpUsuario" style="width:100%">
+  <div style="width:100%">
 
     <div style="margin:15px;border:1px solid #eee;border-radius:6px;padding:5px;display:flex;align-items:center;">
       <div style="padding:4px;margin-right:5px;font-size:17px;display:flex;align-items:center">
         <ion-icon name="call" style="color:#bbb;margin-right:5px;font-size:20px"></ion-icon>
         +56
       </div>
-      <ion-input type="tel" [(ngModel)]="telefono" placeholder="Número de teléfono" style="font-size:17px"></ion-input>
+      <ion-input type="tel" [(ngModel)]="phone" placeholder="Número de teléfono" style="font-size:17px"></ion-input>
     </div>
 
     <div *ngIf="err_9_digitos_telefono" style="padding-left:15px;color:red">
@@ -28,24 +28,20 @@
       Solo deben ser números
     </div>
 
-    <div *ngIf="err_telefono_en_uso" style="padding-left:15px;color:red">
-      Este teléfono ya está registrado
-    </div>
-
     <div style="color:#888;margin:15px">
       Te enviaremos un mensaje de texto para verificar
     </div>
 
     <ion-item style="margin-top: 10px">
-      <ion-toggle (ionChange)="togglePoliticas()" color="secondary" slot="start"></ion-toggle>
+      <ion-toggle (ionChange)="policyToggle()" color="secondary" slot="start"></ion-toggle>
       <div style="color:#666">
-        Acepto <span style="color:#9EDF1F;font-weight:500" (click)="openPoliticasModal()">política de privacidad</span>
+        Acepto <span style="color:#9EDF1F;font-weight:500" (click)="openPolicyModal()">política de privacidad</span>
         de MoviApp
       </div>
     </ion-item>
 
     <div padding style="margin-top:20px">
-      <ion-button [disabled]="isLoading" (click)="next()" mode="ios" expand="block" color="secondary">
+      <ion-button [disabled]="isLoading" (click)="onNext()" mode="ios" expand="block" color="secondary">
         <div style="font-size:20px;font-weight:600">
           Continuar
         </div>

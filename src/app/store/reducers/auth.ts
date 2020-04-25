@@ -6,13 +6,13 @@ import {
 
 export interface State {
     isAuth: boolean;
-    usuario: object;
+    user: any;
     token: string;
 }
 
 const initialState = {
     isAuth: false,
-    usuario: null,
+    user: null,
     token: null
 }
 
@@ -22,7 +22,7 @@ export function authReducer(state = initialState, action: AuthActions) {
             
             return {
                 isAuth: true,
-                usuario: action.payload.usuario,
+                user: action.payload.user,
                 token: action.payload.token
             }
 
@@ -35,5 +35,5 @@ export function authReducer(state = initialState, action: AuthActions) {
 }
 
 export const getIsAuth = (state: State) => state.isAuth;
-export const getUsuario = (state: State) => state.usuario;
+export const getUser = (state: State) => state.user;
 export const getAuthState = (state: State) => state;

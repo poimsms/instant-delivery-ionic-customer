@@ -1,19 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { MenuController, ModalController, LoadingController, PopoverController, ToastController } from '@ionic/angular';
-import { ControlService } from 'src/app/services/control.service';
 import { Router } from '@angular/router';
 import { DataService } from 'src/app/services/data.service';
-import { AuthService } from 'src/app/services/auth.service';
 import { AlertController } from '@ionic/angular';
-import { FireService } from 'src/app/services/fire.service';
 import { Subscription } from 'rxjs';
-import { GlobalService } from 'src/app/services/global.service';
 import { RatingComponent } from 'src/app/components/rating/rating.component';
 import { PayComponent } from 'src/app/components/pay/pay.component';
-import { FcmService } from 'src/app/services/fcm.service';
 import { CallNumber } from '@ionic-native/call-number/ngx';
-import { OtrosService } from 'src/app/services/otros.service';
-import { RiderComponent } from 'src/app/components/rider/rider.component';
+import { Store } from '@ngrx/store';
+import * as fromMap from '../../store/reducers/map';
+import messages from '../../utils/messages';
+import { RidersService } from 'src/app/services/riders.service';
+import markerImages from 'src/app/utils/marker-urls';
+import { TripService } from 'src/app/services/trip.service';
 
 declare var google: any;
 
@@ -28,147 +27,65 @@ export class HomePage implements OnInit, OnDestroy {
   service: any;
   directionsDisplay: any;
   directionsService: any;
-  markerReady: boolean;
-  marker: any;
-  riderMarker: any;
-  origenMarker: any;
-  destinoMarker: any;
-  gpsMarker: any;
 
-  showTrip = false;
+  subs: Subscription[] = [];
 
-  distancia: number;
-
-  riderPrevio = '';
-
-  transporte = 'moto';
-  texto_origen = 'Punto de recogida';
-  texto_destino = 'Punto de entrega';
-
-  distancia_excedida = false;
-
-  isBicicleta = false;
-  isMoto = false;
-  isAuto = false;
-
-  tiempoMoto: number;
-  tiempoBici: number;
-  tiempoAuto: number;
-  tiempo: number;
-
-  precioBici = 0;
-  precioMoto = 0;
-  precioAuto = 0;
-
-  precioBici_promo = 0;
-  precioMoto_promo = 0;
-  precioAuto_promo = 0;
-
-  showMoto: boolean;
-  showBici: boolean;
-  showAuto: boolean;
-
-  pedidoActivo = false;
-
-  pedido: any;
+  coupon: any;
   rider: any;
-  riders = [];
-
-  usuario: any;
-  isAuth: boolean;
-
-  riderCoorsSub$: Subscription;
-  mapaSub$: Subscription;
-  riderSub$: Subscription;
-  cuponSub$: Subscription;
-
-
-  solicitudAceptada = false;
-
-  vehiculo: string;
-  precio: number;
-  precio_promo: number;
-
-
-  rutaReady = false;
-  isEmpresa = false;
-  loadingRider = false;
-
-  timer: any;
-  riderIndex = 0;
+  model: any;
 
   graciasPorComprar = false;
-  estaBuscandoRider = false;
-  riderActivoEnBusqueda: string;
-  ciudad: string;
-
-  cuponData: any;
-
   isLoading = false;
 
-  bodyNeerRider: any;
-  counter = 0;
-
-  imageURL = 'https://res.cloudinary.com/ddon9fx1n/image/upload/v1578060689/tools/ninja.svg';
-  origenImg = 'https://res.cloudinary.com/ddon9fx1n/image/upload/v1570429346/tools/pin_origen.png';
-  destinoImg = 'https://res.cloudinary.com/ddon9fx1n/image/upload/v1571242743/tools/pin_destino.png';
-  gpsImg = 'https://res.cloudinary.com/ddon9fx1n/image/upload/v1574420400/tools/current.png';
-
   gpsIcon = {
-    url: this.gpsImg,
+    url: markerImages.gps,
     scaledSize: new google.maps.Size(60, 60),
     origin: new google.maps.Point(0, 0),
     anchor: new google.maps.Point(30, 30)
   };
 
   riderIcon = {
-    url: this.imageURL,
+    url: markerImages.rider,
     scaledSize: new google.maps.Size(40, 40),
     origin: new google.maps.Point(0, 0),
     anchor: new google.maps.Point(0, 32)
   };
 
-  origenIcon = {
-    url: this.origenImg,
+  originIcon = {
+    url: markerImages.origin,
     scaledSize: new google.maps.Size(34, 34),
     origin: new google.maps.Point(0, 0),
     anchor: new google.maps.Point(16, 34)
   };
 
-  destinoIcon = {
-    url: this.destinoImg,
+  destinationIcon = {
+    url: markerImages.destination,
     scaledSize: new google.maps.Size(36, 36),
     origin: new google.maps.Point(0, 0),
     anchor: new google.maps.Point(4, 36)
   };
 
-  no_riders_area = false;
-
-  metodo_pago = '';
-
-  evento = 0;
-  tiempoLlegada = 0;
-
-  vehiculo_alternativo: string;
+  markers = [
+    { type: 'origin', icon: this.originIcon, ref: null },
+    { type: 'destination', icon: this.destinationIcon, ref: null },
+    { type: 'gps', icon: this.gpsIcon, ref: null },
+    { type: 'rider', icon: this.riderIcon, ref: null }
+  ]
 
   constructor(
     private menu: MenuController,
-    private _control: ControlService,
     private router: Router,
     private _data: DataService,
-    private _auth: AuthService,
     public alertController: AlertController,
-    private _fire: FireService,
-    private _global: GlobalService,
     public modalController: ModalController,
     public loadingController: LoadingController,
-    private _fcm: FcmService,
     private callNumber: CallNumber,
-    private _otros: OtrosService,
     public popoverController: PopoverController,
-    public toastController: ToastController
+    public toastController: ToastController,
+    private store: Store<fromMap.State>,
+    private _rider: RidersService,
+    private _trip: TripService
   ) {
-    this.usuario = _auth.usuario;
     this.service = new google.maps.DistanceMatrixService();
     this.directionsDisplay = new google.maps.DirectionsRenderer({
       suppressMarkers: true, polylineOptions: {
@@ -179,84 +96,118 @@ export class HomePage implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this._control.grand_GPS_permission().then((isGPS: any) => {
 
-      this.cargarMapa();
-      this.mapaSubscription();
+    this.subToMap();
 
-      this.getRating();
-      this.subToCodigoPromo();
-
-      if (isGPS) {
-        this.graficarMarcador(this._control.gpsCoors, 'gps');
-      }
-
-      this._otros.pedido$.subscribe(data => {
-        this.pedidoActivo = false;
-        this.pedidosHandler(data);
-      });
-
-      this._otros.getPedido('buscar_pedido_activo_mas_reciente');
-    });
+    this.subs.push(
+      this._trip.rider().subscribe(data => this.riderHandler(data)),
+      this._trip.rate().subscribe(data => this.ratingHandler(data)),
+      this._trip.coupon().subscribe(data => this.coupon = data),
+      this.store.select(fromMap.getMapState).subscribe(data => this.model = data)
+    )
   }
 
   ngOnDestroy() {
-    this.riderCoorsSub$ ? this.riderCoorsSub$.unsubscribe() : console.log();
-    this.riderSub$ ? this.riderSub$.unsubscribe() : console.log();
-    clearTimeout(this.timer);
-    this._otros.pedido$.unsubscribe();
-    this.mapaSub$.unsubscribe();
-    this.cuponSub$.unsubscribe();
+    this.subs.forEach(sub => sub.unsubscribe())
   }
 
-  riderSubCoors(origen, destino) {
-    this.riderCoorsSub$ = this._fire.getRiderCoors(this.rider._id).subscribe((riders: any) => {
 
-      let rider = riders[0];
-      this.evento = rider.evento;
+  update(msg, model) {
 
-      this.tiempoLlegada = rider.tiempoLlegada;
+    switch (msg.type) {
+      case MSGS.SET_UP_TRIP:
+        const { origin, destination, prices, times, distance } = msg;
 
-      if (rider.cliente == this.usuario._id) {
+        const trip = model.trip;
+        trip.status = this.STATUS.IN_SETUP;
 
-        const coors = { lat: rider.lat, lng: rider.lng };
-        this.graficarMarcador(coors, 'rider');
+        return { ...model, origin, destination, prices, times, distance, trip }
 
-        let bounds = new google.maps.LatLngBounds();
+      case MSGS.SET_VEHICLE:
+        const { vehicle } = msg;
+        return { ...model, vehicle }
 
-        bounds.extend(new google.maps.LatLng(rider.lat, rider.lng));
-        bounds.extend(new google.maps.LatLng(origen.lat, origen.lng));
-        bounds.extend(new google.maps.LatLng(destino.lat, destino.lng));
+      case MSGS.SET_PAYMENT_METHOD:
+        const { payment_method } = msg;
+        return { ...model, payment_method }
 
-        this.map.fitBounds(bounds);
+      case MSGS.START_TRIP:
+        const trip = model.trip;
+        const { origin, destination, prices, times, distance } = msg;
+
+        trip.status = this.STATUS.IN_PROGRESS;
+        return { ...model, trip }
+
+      case MSGS.UPDATE_TRIP_STEP:
+        const { step } = msg;
+        const trip = model.trip;
+        trip.step = step;
+        return { ...model, trip }
+
+      case MSGS.SHOW_TRIP_OPTIONS:
+        const trip = model.trip;
+        trip.showOptions = true;
+        return { ...model, trip }
+
+      case MSGS.CANCEL_TRIP:
+        return this.initModel
+    }
+
+  }
+
+
+  subToMap() {
+    this.store.select(fromMap.getMapState).subscribe(async (state: any) => {
+
+      if (state.displayRoute) {
+
+        const data: any = await this._trip.getDistanceAndTime(state.origin, state.destination);
+
+        const prices = await this._trip.getPrices(data.distance);
+
+        const promo_prices = this._trip.applyCoupon(prices, this.coupon);
+
+        const payload = {
+          origin: state.origin,
+          destination: state.destination,
+          times: data.times,
+          distance: data.distance,
+          prices: promo_prices
+        }
+
+        this.store.dispatch(new Trip.StartTrip(payload))
+
+        this.displayRoute(state.origin, state.destination)
+
+        this.isLoading = true;
       }
 
-      if (rider.cliente != this.usuario._id) {
-        this.riderCoorsSub$.unsubscribe();
+      if (state.initMap) {
 
-        // setTimeout(() => {
-        //   this.resetMapa();
-        //   this.toast_pedido_completado();
-        // }, 2000);
+        this.directionsDisplay.setMap(null);
+        this.map.setCenter(state.center);
 
-        setTimeout(() => {
-          this.resetMapa();
-          this.getRating();
-        }, 6000);
+        if (state.gpsActived)
+          this.displayMarker(state.center, 'gps')
       }
-
     });
   }
 
-  getRating() {
-    this._data.getActiveRating(this.usuario._id).then((data: any) => {
-      if (data.ok) {
-        this.presentRating(data.rating);
-      }
-    });
+
+  riderHandler(data) {
+
+    const { riderCoors, startTracking, stopTracking } = data;
+
+    if (startTracking)
+      this.displayMarker(riderCoors, 'rider');
+
+    if (stopTracking) {
+      this.store.dispatch(new Map.ClearMap);
+      this._trip.loadRate();
+    }
   }
 
-  async presentRating(rating) {
+  async ratingHandler(rating) {
 
     const modal = await this.popoverController.create({
       component: RatingComponent,
@@ -266,294 +217,11 @@ export class HomePage implements OnInit, OnDestroy {
     await modal.present();
   }
 
-  async presentAlternative(vehiculo, alternativo, payData) {
 
-    const modal = await this.popoverController.create({
-      component: RiderComponent,
-      componentProps: { vehiculo, alternativo }
-    });
-
-    await modal.present();
-
-    const { data } = await modal.onWillDismiss();
-
-    if (!data || !data.ok) {
-      return this.cancelarBusqueda();
-    }
-
-    this.openPayModal(payData);
-  }
-
-  subToCodigoPromo() {
-    this.cuponSub$ = this._data.cuponData.subscribe(data => this.cuponData = data)
-    this._data.getCuponActivo(this._auth.usuario._id);
-  }
-
-  pedidosHandler(data) {
-    if (!data.ok) {
-      return;
-    }
-
-    this.resetMapa();
-
-    this.pedido = data.pedido;
-    this.rider = data.pedido.rider;
-    const origen = data.pedido.origen;
-    const destino = data.pedido.destino;
-    this.texto_origen = data.pedido.origen.direccion;
-    this.texto_destino = data.pedido.destino.direccion;
-
-    this.pedidoActivo = true;
-
-    if (this._auth.usuario.role == 'EMPRESA_ROLE') {
-      this.isEmpresa = true;
-    }
-
-    this.graficarRuta(origen, destino, data.pedido.vehiculo);
-    this.riderSubCoors(origen, destino);
-  }
-
-  crearNuevoPedido() {
-    this.riderCoorsSub$.unsubscribe();
-    this.resetMapa();
-
-    this.graficarMarcador(this._control.gpsCoors, 'gps');
-    this.map.setCenter(this._control.gpsCoors);
-  }
-
-  iniciarPedido() {
-
-    if (this.distancia_excedida) {
-      return this.limite_excedido();
-    }
-
-    if (this.isBicicleta) {
-      this.vehiculo = 'bicicleta';
-      this.precio = this.precioBici;
-      this.precio_promo = this.precioBici_promo;
-    }
-
-    if (this.isMoto) {
-      this.vehiculo = 'moto';
-      this.precio = this.precioMoto;
-      this.precio_promo = this.precioMoto_promo;
-    }
-
-    if (this.isAuto) {
-      this.vehiculo = 'auto';
-      this.precio = this.precioAuto;
-      this.precio_promo = this.precioAuto_promo;
-    }
-
-    this._control.estaBuscandoRider = true;
-    this.buscarRider();
-  }
-
-  buscarRider() {
-
-    this.loadingRider = true;
-
-    if (this.no_riders_area) {
-      return setTimeout(() => {
-        this.loadingRider = false;
-        this.no_riders_area = false;
-        this.alert_area_sin_riders();
-      }, 25 * 1000);
-    }
-
-    this._fire.riders_consultados = [];
-
-    this.bodyNeerRider = {
-      ciudad: this.ciudad,
-      vehiculo: this.vehiculo,
-      lat: this._control.origen.lat,
-      lng: this._control.origen.lng
-    };
-
-    this.getNeerestRider();
-  }
-
-  getNeerestRider() {
-
-    return new Promise((resolve, reject) => {
-
-      this.counter++;
-
-      if (this.counter == 4) {
-        this.loadingRider = false;
-        this.counter = 0;
-        return this.alert_alta_demanda();
-      }
-
-      this._fire.getNeerestRider(this.bodyNeerRider).then((res: any) => {
-
-        console.log(res, 'RES NEEREST');
-
-        if (!res.ok) {
-          return setTimeout(() => {
-            this.loadingRider = false;
-            this.alert_alta_demanda();
-          }, 5 * 1000);
-        }
-
-        this.vehiculo_alternativo = res.vehiculo;
-
-        this.handShake(res.id);
-        this.sleepRider(res.id);
-
-        resolve();
-      });
-    });
-  }
-
-  sleepRider(id) {
-    this.timer = setTimeout(async () => {
-
-      this._fire.riders_consultados.push(id);
-
-      this.getNeerestRider();
-
-      this._fire.getRiderPromise(id).then((rider: any) => {
-
-        if (rider.pedidos_perdidos >= 1) {
-
-          this._fire.updateRider(id, 'rider', {
-            cliente_activo: '',
-            pagoPendiente: false,
-            nuevaSolicitud: false,
-            isOnline: false,
-            pedidos_perdidos: 0
-          });
-
-          this._fire.updateRider(id, 'coors', {
-            pagoPendiente: false,
-            isOnline: false
-          });
-        } else {
-
-          this._fire.updateRider(id, 'rider', {
-            cliente_activo: '',
-            pagoPendiente: false,
-            nuevaSolicitud: false,
-            pedidos_perdidos: rider.pedidos_perdidos + 1
-          });
-
-          this._fire.updateRider(id, 'coors', {
-            pagoPendiente: false
-          });
-
-        }
-      });
-
-    }, 5 * 1000);
-  }
-
-  handShake(id) {
-    this._fire.getRiderPromise(id).then((rider: any) => {
-
-      if (rider.cliente_activo == '') {
-        this._fire.updateRider(id, 'rider', { cliente_activo: this.usuario._id })
-          .then(() => this.handShake(id));
-      }
-
-      if (rider.cliente_activo != this.usuario._id && rider.cliente_activo != '') {
-        this.getNeerestRider();
-      }
-
-      if (rider.cliente_activo == this.usuario._id && rider.cliente_activo != '') {
-        this.sendRiderRequest(id);
-      }
-    });
-  }
-
-  async sendRiderRequest(id) {
-
-    this._fire.riders_consultados.push(id);
-
-    await this._fire.updateRider(id, 'rider', {
-      nuevaSolicitud: true,
-      pagoPendiente: true,
-      created: new Date().getTime(),
-      dataPedido: {
-        cliente: {
-          _id: this.usuario._id,
-          nombre: this.usuario.nombre,
-          img: this.usuario.img.url,
-          role: this.usuario.role
-        },
-        pedido: {
-          distancia: this.distancia,
-          tiempo: this.tiempo,
-          origen: this._control.origen,
-          destino: this._control.destino,
-          costo: this.precio
-        }
-      }
-    });
-
-    await this._fire.updateRider(id, 'coors', {
-      pagoPendiente: true
-    });
-
-    this.subscribeToRider(id);
-    this._fcm.sendPushNotification(id, 'nuevo-pedido');
-  }
-
-  subscribeToRider(id) {
-    this.riderSub$ = this._fire.getRider(id).subscribe(data => {
-      const riderFire: any = data[0];
-      this.riderActivoEnBusqueda = riderFire.rider;
-
-      if (riderFire.rechazadoId == this.usuario._id) {
-        clearTimeout(this.timer);
-        this.riderSub$.unsubscribe();
-        this._fire.updateRider(id, 'rider', { rechazadoId: '', cliente_activo: '' })
-        this.getNeerestRider();
-      }
-
-      if (riderFire.aceptadoId == this.usuario._id) {
-
-        this.tiempoLlegada = riderFire.tiempoLlegada;
-
-        clearTimeout(this.timer);
-        this.riderSub$.unsubscribe();
-        this.loadingRider = false;
-
-        this._data.getOneRider(riderFire.rider).then(rider => {
-
-          this.rider = rider;
-
-          const data = {
-            actividad: riderFire.actividad,
-            monto: this.precio,
-            monto_promo: this.precio_promo,
-            rider: this.rider,
-            usuario: this.usuario,
-            pedido: {
-              origen: this._control.origen,
-              destino: this._control.destino,
-              distancia: this.distancia,
-              tiempo: this.tiempo + this.tiempoLlegada
-            }
-          }
-
-          if (this.vehiculo != this.vehiculo_alternativo) {
-            this.presentAlternative(this.vehiculo, this.vehiculo_alternativo, data);
-          } else {
-            this.openPayModal(data);
-          }
-
-        });
-      }
-
-    });
-  }
-
-  async confirmar(payData) {
-
+  async onConfirmRequest() {
     const modal = await this.modalController.create({
       component: PayComponent,
-      componentProps: { data: payData, cuponData: this.cuponData }
+      componentProps: { data: this.model, coupon: this.coupon }
     });
 
     await modal.present();
@@ -564,7 +232,7 @@ export class HomePage implements OnInit, OnDestroy {
       return this.resetMapa();
     }
 
-    if (data.state == 'PAGO_EXITOSO') {
+    if (data.status === messages.payment.SUCCESS) {
 
       this.directionsDisplay.setMap(null);
 
@@ -576,7 +244,7 @@ export class HomePage implements OnInit, OnDestroy {
       });
       this.directionsService = new google.maps.DirectionsService();
 
-      this.cargarMapa();
+      this.loadMap({ lat: 0, lng: 0 });
 
       this.graciasPorComprar = true;
 
@@ -585,278 +253,45 @@ export class HomePage implements OnInit, OnDestroy {
         this._otros.getPedido('buscar_pedido_activo_mas_reciente');
       }, 2000);
 
-      this._data.getCuponActivo(this._auth.usuario._id);
+      this._data.getCuponActivo(this._auth.user._id);
 
       this._fcm.sendPushNotification(data.riderID, 'confirmacion-pedido');
 
     }
 
-    if (data.state == 'PAGO_NO_REALIZADO') {
+    if (data.status === messages.payment.FAIL) {
       this.alert_pedido_cancelado();
     }
 
-    if (data.state == 'TIEMPO_EXPIRADO') {
+    if (data.status === messages.payment.TIMEOUT) {
       this.resetMapa();
     }
   }
 
-  async openPayModal(payData) {
-
-    const modal = await this.modalController.create({
-      component: PayComponent,
-      componentProps: { data: payData, cuponData: this.cuponData }
-    });
-
-    await modal.present();
-
-    const { data } = await modal.onWillDismiss();
-
-    if (!data) {
-      return this.resetMapa();
+  async cancelTrip() {
+    const dta = {
+      id: 'asdsa'
     }
-
-    if (data.state == 'PAGO_EXITOSO') {
-
-      this.directionsDisplay.setMap(null);
-
-      this.service = new google.maps.DistanceMatrixService();
-      this.directionsDisplay = new google.maps.DirectionsRenderer({
-        suppressMarkers: true, polylineOptions: {
-          strokeColor: '#404042'
-        }
-      });
-      this.directionsService = new google.maps.DirectionsService();
-
-      this.cargarMapa();
-
-      this.graciasPorComprar = true;
-
-      setTimeout(() => {
-        this.graciasPorComprar = false;
-        this._otros.getPedido('buscar_pedido_activo_mas_reciente');
-      }, 2000);
-
-      this._data.getCuponActivo(this._auth.usuario._id);
-
-      this._fcm.sendPushNotification(data.riderID, 'confirmacion-pedido');
-
-    }
-
-    if (data.state == 'PAGO_NO_REALIZADO') {
-      this.alert_pedido_cancelado();
-    }
-
-    if (data.state == 'TIEMPO_EXPIRADO') {
-      this.resetMapa();
-    }
+    await this._trip.cancelTrip(data);
+    this.store.dispatch(new Trip.CancelTrip);
+    this.store.dispatch(new Map.ClearMap);
   }
 
-
-  cancelarBusqueda() {
-
-    this.riderSub$ ? this.riderSub$.unsubscribe() : console.log();
-
-    clearTimeout(this.timer);
-
-    this._fire.updateRider(this.riderActivoEnBusqueda, 'rider', { nuevaSolicitud: false, pagoPendiente: false, cliente_activo: '' });
-    this._fire.updateRider(this.riderActivoEnBusqueda, 'coors', { pagoPendiente: false });
-
-    this.loadingRider = false;
-    this.resetMapaFromBusquedaCancelada();
-
-    this.graficarMarcador(this._control.gpsCoors, 'gps');
-    this.map.setCenter(this._control.gpsCoors);
-  }
-
-  cancelarViaje() {
-    this.riderCoorsSub$.unsubscribe();
-    this._fire.cancelarServicio(this.rider._id, this.pedido);
-    this._fcm.sendPushNotification(this.rider._id, 'servicio-cancelado');
-    this.resetMapa();
-    this.graficarMarcador(this._control.gpsCoors, 'gps');
-    this.map.setCenter(this._control.gpsCoors);
-  }
-
-  openMetodoPago() {
+  openPayMethod() {
     this.router.navigateByUrl('metodo-pago');
-  }
-
-  openMapaPage(tipo) {
-
-    if (this.pedidoActivo) {
-      return;
-    }
-
-    this._control.tipo = tipo;
-    this.router.navigateByUrl('mapa');
   }
 
   async openUbicaciones() {
     this.router.navigateByUrl('direcciones');
   }
 
-  vehiculoToggle(tipo) {
-    this.transporte = tipo;
-    if (tipo == 'bicicleta') {
-      this.isBicicleta = true;
-      this.isMoto = false;
-      this.isAuto = false;
-    }
-    if (tipo == 'moto') {
-      this.isBicicleta = false;
-      this.isMoto = true;
-      this.isAuto = false;
-
-    }
-    if (tipo == 'auto') {
-      this.isBicicleta = false;
-      this.isMoto = false;
-      this.isAuto = true;
-    }
+  vehicleToggle(type) {
+    this.model.vehicle = type;
   }
 
-  mapaSubscription() {
-
-    this.mapaSub$ = this._control.mapState.subscribe((data: any) => {
-
-      if (data.accion == 'calcular-ruta') {
-
-        this.texto_origen = data.origen.direccion;
-        this.texto_destino = data.destino.direccion;
-
-        const origen = [data.origen.lat, data.destino.lng];
-
-        const cobertura = this._fire.calcular_cobertura(origen);
-
-        if (!cobertura.ok) {
-          return this.alert_zona_no_cubierta();
-        }
-
-        this.isLoading = true;
-
-        const origin1 = new google.maps.LatLng(data.origen.lat, data.origen.lng);
-        const origin2 = new google.maps.LatLng(data.destino.lat, data.destino.lng);
-
-        this.service.getDistanceMatrix(
-          {
-            origins: [origin1],
-            destinations: [origin2],
-            travelMode: 'DRIVING',
-          }, async (response, status) => {
-
-            const distancia = response.rows[0].elements[0].distance.value;
-            const seconds = response.rows[0].elements[0].duration.value;
-
-            this.distancia = distancia;
-
-            this.ciudad = this._fire.calcular_ciudad(origen);
-            this._control.ciudad = this.ciudad;
-
-            const body = {
-              ciudad: this.ciudad,
-              lat: data.origen.lat,
-              lng: data.origen.lng
-            };
-
-            const res: any = await this._fire.detectarRidersCercanos(body);
-
-            console.log(res, 'res-cercanos')
-
-            if (!res.isMoto && !res.isBici && !res.isAuto) {
-              this.no_riders_area = true;
-
-              this.showBici = false;
-              this.showMoto = true;
-              this.showAuto = false;
-
-              this.isMoto = true;
-            }
-
-            if (res.isMoto || res.isBici || res.isAuto) {
-              this.no_riders_area = false;
-
-              if (res.isBici) {
-                this.isBicicleta = true;
-              } else if (res.isMoto) {
-                this.isMoto = true;
-              } else {
-                if (res.isAuto) {
-                  this.isAuto = true;
-                }
-              }
-
-              this.showMoto = res.isMoto;
-              this.showBici = res.isBici;
-              this.showAuto = res.isAuto;
-            }
-
-            if (distancia > 6000) {
-              this.showBici = false
-            }
-
-            if (distancia > 40000 && this.ciudad != 'santiago') {
-              this.distancia_excedida = true;
-            }
-
-            if (distancia > 70000 && this.ciudad == 'santiago' && this.isMoto) {
-              this.distancia_excedida = true;
-            }
-
-            this.tiempoMoto = Math.round(seconds / 60 / 1.15);
-            this.tiempoBici = Math.round(distancia / (13 * 1000) * 60);
-            this.tiempoAuto = Math.round(seconds / 60 / 1.15);
-
-            if (this.isMoto) {
-              this.tiempo = this.tiempoMoto;
-            }
-
-            if (this.isBicicleta) {
-              this.tiempo = this.tiempoBici;
-            }
-
-            if (this.isAuto) {
-              this.tiempo = this.tiempoAuto;
-            }
-
-            // this.tiempo += this.tiempoLlegada;
-
-            // console.log(this.tiempoLlegada, 'tiempoLlegada')
-
-            // console.log(this.tiempo, 'tiempo')
-
-            const tarifasBody = {
-              distancia: this.distancia,
-              ciudad: this.ciudad
-            };
-
-            const precios: any = await this._global.calcularPrecios(tarifasBody);
-
-            this.precioMoto = precios.moto;
-            this.precioBici = precios.bici;
-            this.precioAuto = precios.auto;
-
-            this.precioMoto_promo = precios.moto;
-            this.precioBici_promo = precios.bici;
-            this.precioAuto_promo = precios.auto;
-
-            if (this.cuponData.ok) {
-              this.precioMoto_promo = this._global.aplicar_codigo(this.cuponData, precios.moto);
-              this.precioBici_promo = this._global.aplicar_codigo(this.cuponData, precios.bici);
-              this.precioAuto_promo = this._global.aplicar_codigo(this.cuponData, precios.auto);
-            }
-
-            this.graficarRuta(data.origen, data.destino, 'Moto');
-
-
-
-          });
-      }
-    });
-  }
-
-  cargarMapa() {
+  loadMap(coors) {
     this.map = new google.maps.Map(document.getElementById('map'), {
-      center: this._control.gpsCoors,
+      center: coors,
       zoom: 16,
       disableDefaultUI: true
     });
@@ -864,135 +299,46 @@ export class HomePage implements OnInit, OnDestroy {
     this.directionsDisplay.setMap(this.map);
   }
 
-  graficarRuta(origen, destino, vehiculo) {
-    var self = this;
-    this.rutaReady = true;
-    this.isLoading = false;
+  displayRoute(origen, destino) {
 
     this.directionsDisplay.setMap(this.map);
     const origenLatLng = new google.maps.LatLng(origen.lat, origen.lng);
     const destinoLatLng = new google.maps.LatLng(destino.lat, destino.lng);
 
-    let modo = '';
-
-    vehiculo == 'Bicicleta' ? modo = 'WALKING' : modo = 'DRIVING';
-
     this.directionsService.route({
       origin: origenLatLng,
       destination: destinoLatLng,
-      travelMode: modo,
-    }, function (response, status) {
-      self.directionsDisplay.setDirections(response);
+      travelMode: 'DRIVING',
+    }, (response, status) => {
+      this.directionsDisplay.setDirections(response);
+      this.isLoading = false;
     });
 
     if (this.gpsMarker) {
       this.gpsMarker.setMap(null);
     }
 
-    this.graficarMarcador({ lat: origen.lat, lng: origen.lng }, 'origen');
-    this.graficarMarcador({ lat: destino.lat, lng: destino.lng }, 'destino');
-
-
-
-
+    this.displayMarker({ lat: origen.lat, lng: origen.lng }, 'origen');
+    this.displayMarker({ lat: destino.lat, lng: destino.lng }, 'destino');
   }
 
-  graficarMarcador(coors, tipo) {
-    let data: any = {};
-    data.position = coors;
-    data.map = this.map;
+  displayMarker(coors, type) {
+    const index = this.markers.findIndex(marker => marker.type === type);
 
-    if (tipo == 'rider') {
-      if (!this.markerReady) {
-
-        data.animation = google.maps.Animation.DROP;
-        data.icon = this.riderIcon;
-        this.riderMarker = new google.maps.Marker(data);
-
-        this.markerReady = true;
-      } else {
-        this.riderMarker.setPosition(coors);
-      }
+    let data = {
+      position: coors,
+      map: this.map,
+      icon: this.markers[index].icon
     }
 
-    if (tipo == 'default') {
-      new google.maps.Marker(data);
-    }
-
-    if (tipo == 'gps') {
-      data.icon = this.gpsIcon;
-      this.gpsMarker = new google.maps.Marker(data);
-    }
-
-    if (tipo == 'origen') {
-      data.animation = google.maps.Animation.DROP;
-      data.icon = this.origenIcon;
-      this.origenMarker = new google.maps.Marker(data);
-    }
-
-    if (tipo == 'destino') {
-      data.animation = google.maps.Animation.DROP;
-      data.icon = this.destinoIcon;
-      this.destinoMarker = new google.maps.Marker(data);
-    }
+    this.markers[index].ref = new google.maps.Marker(data)
   }
 
-  borrarMarcadores() {
+  removeMarkers() {
 
-    if (this.riderMarker) {
-      this.markerReady = false;
-      this.riderMarker.setMap(null);
-    }
-
-    if (this.gpsMarker) {
-      this.gpsMarker.setMap(null);
-    }
-
-    if (this.origenMarker) {
-      this.origenMarker.setMap(null);
-    }
-
-    if (this.destinoMarker) {
-      this.destinoMarker.setMap(null);
-    }
-  }
-
-  async limite_excedido() {
-    const alert = await this.alertController.create({
-      header: 'Lo sentimos mucho!',
-      message: 'Es mucha distancia para nuestros Riders',
-      buttons: [
-        {
-          text: 'Ok',
-          role: 'cancel',
-          cssClass: 'secondary',
-          handler: (blah) => {
-            this.resetMapaAndRider();
-          }
-        }
-      ]
+    this.markers.forEach(marker => {
+      if (marker.ref) marker.ref.setMap(null)
     });
-
-    await alert.present();
-  }
-
-  async limite_auto_excedido() {
-    const alert = await this.alertController.create({
-      header: 'Lo sentimos mucho!',
-      message: 'Es mucha distancia para nuestros automóviles',
-      buttons: [
-        {
-          text: 'Ok',
-          role: 'cancel',
-          cssClass: 'secondary',
-          handler: (blah) => {
-            this.resetMapaAndRider();
-          }
-        }
-      ]
-    });
-
-    await alert.present();
   }
 
   async alert_pedido_cancelado() {
@@ -1014,62 +360,6 @@ export class HomePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  async alert_area_sin_riders() {
-    const alert = await this.alertController.create({
-      header: 'No hay riders en el área',
-      message: 'Enviaremos nuevos riders en unos momentos',
-      buttons: [
-        {
-          text: 'Ok',
-          role: 'cancel',
-          cssClass: 'secondary',
-          handler: (blah) => {
-            this.resetMapa();
-          }
-        }
-      ]
-    });
-
-    await alert.present();
-  }
-
-  async alert_zona_no_cubierta() {
-    const alert = await this.alertController.create({
-      header: 'Atención!',
-      message: 'No hay cobertura en esta zona',
-      buttons: [
-        {
-          text: 'Ok',
-          role: 'cancel',
-          cssClass: 'secondary',
-          handler: (blah) => {
-            this.resetMapa();
-          }
-        }
-      ]
-    });
-
-    await alert.present();
-  }
-
-  async alert_alta_demanda() {
-    const alert = await this.alertController.create({
-      header: 'Lo sentimos mucho!',
-      message: 'Debido a una alta demanda no podemos procesar nuevos pedidos. Inténtalo en unos minutos.',
-      buttons: [
-        {
-          text: 'Ok',
-          role: 'cancel',
-          cssClass: 'secondary',
-          handler: (blah) => {
-            this.resetMapa();
-          }
-        }
-      ]
-    });
-
-    await alert.present();
-  }
 
   async alert_cancelacion() {
     const alert = await this.alertController.create({
@@ -1110,58 +400,6 @@ export class HomePage implements OnInit, OnDestroy {
     this._control.pedidoID = this.pedido._id;
 
     this.router.navigateByUrl(page);
-  }
-
-  resetMapaFromBusquedaCancelada() {
-    this.showTrip = false;
-    this.isMoto = false;
-    this.isBicicleta = false;
-    this.isAuto = false;
-    this.counter = 0;
-    this.directionsDisplay.setMap(null);
-    this.pedidoActivo = false;
-    this.rider = null;
-    this.riderIndex = 0;
-    this.rutaReady = false;
-    this._control.origenReady = false;
-    this._control.destinoReady = false;
-    this._control.rutaReady = false;
-    this.borrarMarcadores();
-  }
-
-  resetMapa() {
-    this.showTrip = false;
-    this.isMoto = false;
-    this.isBicicleta = false;
-    this.isAuto = false;
-    this.counter = 0;
-    this.pedidoActivo = false;
-    this.isEmpresa = false;
-    this.directionsDisplay.setMap(null);
-    this.rider = null;
-    this.riderIndex = 0;
-    this.rutaReady = false;
-    this._control.origenReady = false;
-    this._control.destinoReady = false;
-    this._control.rutaReady = false;
-    this.borrarMarcadores();
-  }
-
-  resetMapaAndRider() {
-    this.distancia_excedida = false;
-    this.showTrip = false;
-    this.pedidoActivo = false;
-    this.directionsDisplay.setMap(null);
-    this.riderSub$.unsubscribe();
-    this._fire.updateRider(this.rider._id, 'rider', { pagoPendiente: false, aceptadoId: '', cliente_activo: '' });
-    this._fire.updateRider(this.rider._id, 'coors', { pagoPendiente: false });
-    this.rider = null;
-    this.riderIndex = 0;
-    this.rutaReady = false;
-    this._control.origenReady = false;
-    this._control.destinoReady = false;
-    this._control.rutaReady = false;
-    this.borrarMarcadores();
   }
 
   presentCompraExitosa() {

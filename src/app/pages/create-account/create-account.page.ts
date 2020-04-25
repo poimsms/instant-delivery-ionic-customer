@@ -4,11 +4,11 @@ import { ToastController } from '@ionic/angular';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-login-account',
-  templateUrl: './login-account.page.html',
-  styleUrls: ['./login-account.page.scss'],
+  selector: 'app-create-account',
+  templateUrl: './create-account.page.html',
+  styleUrls: ['./create-account.page.scss'],
 })
-export class LoginAccountPage implements OnInit {
+export class CreateAccountPage implements OnInit {
 
   first_name: string;
   last_name: string;

@@ -1,32 +1,30 @@
 import {
-    AuthActions,
-    SET_AUTHENTICATED,
-    SET_UNAUTHENTICATED
-} from '../actions/auth';
+    CouponActions,
+    ADD_COUPON,
+    USE_COUPON
+} from '../actions/coupon';
 
 export interface State {
-    isAuth: boolean;
-    usuario: object;
-    token: string;
+    ok: boolean;
+    couponId: string;
+    coupon: any;
 }
 
 const initialState = {
-    isAuth: false,
-    usuario: null,
-    token: null
+    ok: false,
+    couponId: null,
+    coupon: null
 }
 
-export function authReducer(state = initialState, action: AuthActions) {
+export function authReducer(state = initialState, action: CouponActions) {
     switch (action.type) {
-        case SET_AUTHENTICATED:
-            
+        case ADD_COUPON:            
             return {
-                isAuth: true,
-                usuario: action.payload.usuario,
-                token: action.payload.token
+                ok: true,
+                couponId: action.payload.couponId,
+                cuopon: action.payload.coupon
             }
-
-        case SET_UNAUTHENTICATED:
+        case USE_COUPON:
             return initialState;
 
         default:
@@ -34,6 +32,4 @@ export function authReducer(state = initialState, action: AuthActions) {
     }
 }
 
-export const getIsAuth = (state: State) => state.isAuth;
-export const getUsuario = (state: State) => state.usuario;
-export const getAuthState = (state: State) => state;
+export const getCouponState = (state: State) => state;

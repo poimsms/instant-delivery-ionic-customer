@@ -23,7 +23,9 @@ const routes: Routes = [
   { path: 'mis-lugares', loadChildren: './pages/mis-lugares/mis-lugares.module#MisLugaresPageModule' },
   { path: 'registro', loadChildren: './pages/registro/registro.module#RegistroPageModule' },
   { path: 'metodo-pago', loadChildren: './pages/metodo-pago/metodo-pago.module#MetodoPagoPageModule' },
-  { path: 'add-info', loadChildren: './pages/add-info/add-info.module#AddInfoPageModule' }
+  { path: 'add-info', loadChildren: './pages/add-info/add-info.module#AddInfoPageModule' },
+  { path: 'verify-phone', loadChildren: './pages/verify-phone/verify-phone.module#VerifyPhonePageModule' },
+  { path: 'create-account', loadChildren: './pages/create-account/create-account.module#CreateAccountPageModule' }
 
 
 

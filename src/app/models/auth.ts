@@ -1,4 +1,4 @@
 export interface AuthData {
-    usuario: object;
+    user: object;
     token: string;
 }

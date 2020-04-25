@@ -1,24 +1,28 @@
 import {
     MapActions,
-    SET_ACTIVE_GPS,
     DISPLAY_ROUTE,
     SET_DESTINATION,
     SET_ORIGIN,
-    CLEAR_MAP
+    INIT_MAP,
+    SET_ACTIVE_GPS
 } from '../actions/map';
 
 export interface State {
-    isActiveGPS: boolean;
     displayRoute: boolean;
-    clearMap: boolean;
+    initMap: boolean;
+    gpsActived: boolean;
+    center: {
+        lat: Number;
+        lng: Number;
+    };
     destination: {
-        ok: boolean,
+        isSet: boolean,
         lat: Number,
         lng: Number,
         address: String
     };
     origin: {
-        ok: boolean,
+        isSet: boolean,
         lat: Number,
         lng: Number,
         address: String
@@ -26,15 +30,12 @@ export interface State {
 }
 
 const initialState = {
-    isActiveGPS: false,
     displayRoute: false,
-    clearMap: false,
-    destination: {
-        ok: false, lat: null, lng: null, address: null
-    },
-    origin: {
-        ok: false, lat: null, lng: null, address: null
-    }
+    initMap: false,
+    gpsActived: false,
+    center: null,
+    destination: null,
+    origin: null
 }
 
 export function authReducer(state: State = initialState, action: MapActions) {
@@ -54,24 +55,14 @@ export function authReducer(state: State = initialState, action: MapActions) {
                 ...state,
                 displayRoute: true
             }
-        case SET_ACTIVE_GPS:
+        case INIT_MAP:
             return {
-                ...state,
-                isActiveGPS: true
-            }
-        case CLEAR_MAP:
-            return {
-                ...state,
-                displayRoute: false,
-                clearMap: true,
-                origin: { ok: false, lat: null, lng: null, address: null },
-                destination: { ok: false, lat: null, lng: null, address: null }
+                ...initialState,
+                clearMap: true
             }
         default:
             return state;
     }
 }
 
-// export const getIsAuth = (state: State) => state.isAuth;
-// export const getUsuario = (state: State) => state.usuario;
 export const getMapState = (state: State) => state;

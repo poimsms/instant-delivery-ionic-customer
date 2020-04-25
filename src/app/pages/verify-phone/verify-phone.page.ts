@@ -7,12 +7,12 @@ import { Store } from '@ngrx/store'
 import * as fromAuth from '../../store/reducers/auth';
 
 @Component({
-  selector: 'app-login-verify',
-  templateUrl: './login-verify.page.html',
-  styleUrls: ['./login-verify.page.scss'],
+  selector: 'app-verify-phone',
+  templateUrl: './verify-phone.page.html',
+  styleUrls: ['./verify-phone.page.scss'],
 })
-export class LoginVerifyPage implements OnInit {
-  
+export class VerifyPhonePage implements OnInit {
+ 
   code: string;
   counter = 90;
   textTime = '1:30';
