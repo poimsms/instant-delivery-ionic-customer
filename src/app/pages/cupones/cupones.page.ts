@@ -21,7 +21,7 @@ export class CuponesPage implements OnInit {
   }
 
   getCupones() {
-    this._data.getCupones(this._auth.usuario._id).then((data: any) => {
+    this._data.getCupones(this._auth.user._id).then((data: any) => {
       console.log(data);
       this.cupones = data.cupones
     });

@@ -89,7 +89,28 @@
       {{tiempo_entrega}}min
     </div>
     <div style="font-weight:500;color:white;">
-      Confirmar envío
+      Realizar pago
+    </div>
+    <div *ngIf="precio_promo != 0" style="color:#fff">
+      ${{precio_promo}}
+    </div>
+    <div *ngIf="precio_promo == 0" style="color:#fff">
+      Gratis
+    </div>
+  </div>
+</ion-footer>
+
+
+<ion-footer style="background:white">
+  <div (click)="confirmar_envio()"
+    style="padding:15px;font-size:18px;background:#9EDF1F;display:flex;align-items:center;justify-content:space-between">
+    <div
+      style="background:#7AC602;border-radius:5px;padding:5px;font-size:15px;display:flex;align-items:center;color:#fff;">
+      <ion-icon name="time" style="color:#fff;margin-right:2px;font-size:18px;"></ion-icon>
+      {{tiempo_entrega}}min
+    </div>
+    <div style="font-weight:500;color:white;">
+      LISTO
     </div>
     <div *ngIf="precio_promo != 0" style="color:#fff">
       ${{precio_promo}}

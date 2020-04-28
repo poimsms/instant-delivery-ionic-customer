@@ -4,6 +4,7 @@ import { DataService } from 'src/app/services/data.service';
 import { PagarService } from 'src/app/services/pagar.service';
 import { FireService } from 'src/app/services/fire.service';
 import { AuthService } from 'src/app/services/auth.service';
+import { TripService } from 'src/app/services/trip.service';
 
 @Component({
   selector: 'app-pay',
@@ -33,12 +34,12 @@ export class PayComponent implements OnInit {
     private _auth: AuthService,
     public popoverController: PopoverController,
     public toastController: ToastController,
-    public alertController: AlertController
+    public alertController: AlertController,
+    private _trip: TripService
   ) {
     this.usuario = this.navParams.get('data').usuario;
     this.rider = this.navParams.get('data').rider;
     this.model = this.navParams.get('model').monto;
-    this.tiempo_entrega = this.navParams.get('data').pedido.tiempo;
   }
 
   ngOnInit() {
@@ -54,36 +55,23 @@ export class PayComponent implements OnInit {
     };
 
     const pedido: any = {
-      costo: this.model.price_promo,
-      costo_real: this.model.price,
-      metodo_de_pago: this.model.payment_method,
+      price_promo: this.model.price_promo,
+      price: this.model.price,
+      payment_method: this.model.payment_method,
       distancia: this.model.distance,
-      origen: this.model.origin,
-      destino: this.model.destination,
+      origin: this.model.origin,
+      destination: this.model.destination,
       rider: this.rider._id,
-      cliente: this.usuario._id,
-      telefono_destino: this.telefono_destino,
+      customer: this.usuario._id,
+      destination_phone: this.telefono_destino,
       nombre_destino: this.nombre_destino,
-      instrucciones: this.instrucciones,
-      tiempo_entrega: this.tiempo_entrega,
-      from: 'APP'
+      details: this.instrucciones,
+      from: 'CUSTOMER_MOBILE_APP'
     };
-
-    if (this._auth.user.role == 'EMPRESA_ROLE') {
-
-      pedido.envio_pagado = false;
-      pedido.pagar_productos = true;
-      pedido.cobrar_productos = true;
-
-      if (this.model.price == 0) {
-        pedido.envio_pagado = true;
-      }
-
-    }
 
     this.isLoading = true;
 
-    if (this.model.payment_method === 'Tarjeta') {
+    if (this.model.payment_method === 'CARD') {
 
       if (this.model.price_promo <= 350) {
         this.isLoading = false;
@@ -91,34 +79,32 @@ export class PayComponent implements OnInit {
       }
 
       this._pagar.pagarConFlow(flow).then(pagoExitoso => {
-          if (pagoExitoso) {
-            this._data.crearPedido(pedido).then((pedido: any) => {
-              this.save(pedido);
-            });
-          } else {
-            this.close();
-          }
+        if (pagoExitoso) {
+          this._data.crearPedido(pedido).then((pedido: any) => {
+            this.save();
+          });
+        } else {
+          this.close();
+        }
       });
     }
 
-    if (this.model.payment_method == 'Efectivo') {
+    if (this.model.payment_method == 'CASH') {
 
       this._data.crearPedido(pedido).then((pedido: any) => {
-        this.save(pedido);
+        this.save();
       });
     }
   }
 
-  async save(pedido) {
-
-      await this.updateRiderEstadoOcupado(pedido._id); 
+  async save() {
 
     if (this.coupon) {
 
       this.isLoading = true;
 
       this._data.useCupon(this.coupon._id).then(() => {
-        this._data.getCuponActivo(this.usuario._id);
+        this._trip.loadCoupon();
         this.isLoading = false;
         this.modalCtrl.dismiss({ status: 'PAGO_EXITOSO', riderID: this.rider._id, tiempoExpirado: false });
       });
@@ -129,42 +115,11 @@ export class PayComponent implements OnInit {
   }
 
   close() {
-    this.updateRiderEstadoDisponible();
     this.modalCtrl.dismiss({ status: 'PAGO_NO_REALIZADO' });
   }
 
-  updateRiderEstadoOcupado(pedidoId) {
 
-    this._fire.updateRider(this.rider._id, 'rider', {
-      fase: 'navegando_al_origen',
-      pagoPendiente: false,
-      actividad: 'ocupado',
-      pedido: pedidoId,
-      aceptadoId: '',
-      evento: 1
-    });
-
-    this._fire.updateRider(this.rider._id, 'coors', {
-      pagoPendiente: false,
-      actividad: 'ocupado',
-      pedido: pedidoId,
-      cliente: this.usuario._id,
-      evento: 1
-    });
-  }
-
-  updateRiderEstadoDisponible() {
-    this._fire.updateRider(this.rider._id, 'rider', {
-      pagoPendiente: false,
-      aceptadoId: '',
-      cliente_activo: ''
-    });
-    this._fire.updateRider(this.rider._id, 'coors', {
-      pagoPendiente: false
-    });
-  }
-
-  async codigo_promo() {
+  async onAddCoupon() {
     const alert = await this.alertController.create({
       header: 'Código promo',
       subHeader: 'Ingresa acá tu Código Promo de Moviapp',
@@ -186,7 +141,7 @@ export class PayComponent implements OnInit {
         }, {
           text: 'Ok',
           handler: (data) => {
-            this.ingresar_codigo(data.codigo);
+            this.couponHandler(data.codigo);
           }
         }
       ]
@@ -195,7 +150,7 @@ export class PayComponent implements OnInit {
     await alert.present();
   }
 
-  ingresar_codigo(codigo) {
+  couponHandler(codigo) {
     const body = {
       usuario: this._auth.user._id,
       codigo: codigo.toLowerCase()
@@ -211,7 +166,7 @@ export class PayComponent implements OnInit {
         return this.toast(res.message);
       }
 
-      this._data.getCuponActivo(this._auth.user._id);
+      this._trip.loadCoupon();
     });
   }
 

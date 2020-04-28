@@ -35,7 +35,7 @@ export class CodigoPage implements OnInit {
 
   onAplicar() {
     const body = {
-      usuario: this._auth.usuario._id,
+      usuario: this._auth.user._id,
       codigo: this.codigo.toLowerCase()
     };
 
@@ -55,7 +55,7 @@ export class CodigoPage implements OnInit {
 
       if (res.tipo == 'PROMO') {
         this.presentToast('¡Promoción añadida!');
-        this._data.getCuponActivo(this._auth.usuario._id);
+        this._data.getActiveCoupon(this._auth.user._id);
       }
 
       if (res.tipo == 'ACTIVACION') {

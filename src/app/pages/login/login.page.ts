@@ -54,7 +54,7 @@ export class LoginPage implements OnInit {
 
     const body = {
       phone: this.phone,
-      from: 'customer-mobile-app'
+      from: 'CUSTOMER_MOBILE_APP'
     };
     
     this._auth.phoneNumberSendRequest(body).then((res: any) => {

@@ -4,14 +4,14 @@
     <ion-icon name="menu" style="color:#444;font-size:22px"></ion-icon>
   </div>
 </div>
-<div *ngIf="model.trip.isStarting" style="z-index:990;position:fixed;top:20px;right:15px">
+<div *ngIf="model.status === 'NOT_STARTED'" style="z-index:990;position:fixed;top:20px;right:15px">
   <div (click)="presentRiderAlternative()"
     style="background:white;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:10px;box-shadow: 0 0 20px #ccc;">
     <ion-icon name="gift" style="color:#555;font-size:24px"></ion-icon>
   </div>
 </div>
 
-<div *ngIf="model.trip.isSettingUp" style="z-index:990;position:fixed;top:15px;left:15px;width:90%">
+<div *ngIf="model.status === 'IN_SETUP'" style="z-index:990;position:fixed;top:15px;left:15px;width:90%">
   <div
     style="border:1px solid #eee;width:100%;background:white;padding:12px;padding-right:5px;padding-left:5px;border-radius:5px;font-size:17.5px;display:flex;align-items:center;justify-content:space-between;box-shadow: 0 0 20px #d3d3d3">
     <div style="font-size:15px;height:15px;width:45%;text-align:center;overflow:hidden">
@@ -29,18 +29,10 @@
 
   <div style="width:100%;height:100%;position:relative;">
     <div id='map'></div>
-    <div *ngIf="rutaReady && !pedidoActivo" style="position:absolute;bottom:30px;left:15px">
+    <div *ngIf="model.status === 'IN_SETUP'" style="position:absolute;bottom:30px;left:15px">
       <div (click)="resetMapa()"
         style="background:white;height:38px;width:38px;display:flex;align-items:center;justify-content:center;border-radius:10px;box-shadow: 0 0 20px #c2c2c2;">
         <ion-icon name="arrow-round-back" style="color:#444;font-size:22px"></ion-icon>
-      </div>
-    </div>
-
-    <div *ngIf="pedidoActivo && isEmpresa" style="position:absolute;bottom:30px;left:10px">
-      <div (click)="crearNuevoPedido()"
-        style="background:white;color:#444;height:35px;padding:20px;display:flex;align-items:center;justify-content:center;border-radius:2px;box-shadow: 0 0 20px #bbb;">
-        <ion-icon name="pin" style="margin-right:5px;color:#999;font-size:22px"></ion-icon>
-        Crear más pedidos
       </div>
     </div>
   </div>
@@ -55,30 +47,64 @@
       El Rider llega en 6 min
     </h5>
   </div> -->
-  <div *ngIf="cuponData?.ok && !rutaReady && !pedidoActivo"
-    style="width:100%;padding:7px;padding-left:15px;color:white;font-size:14px;background:#df1f9f">
-    Se aplicó la promoción
-    <span *ngIf="cuponData.cupon.tipo == 'PORCENTAJE'">{{cuponData.cupon.descuento}}%</span>
-    <span *ngIf="cuponData.cupon.tipo == 'DINERO'">${{cuponData.cupon.descuento}}</span>
-    de descto.
-  </div>
 
-  <div *ngIf="!model.trip.isStarting" style="padding:15px">
 
-    <div *ngIf="model.trip.isSettingUp"
-      style="padding-bottom:10px;margin-bottom:25px;border-bottom:1px solid #eee;padding-left:15px;padding-right:15px;width:100%;display:flex;align-items:center;justify-content:space-between">
-      <div style="color:#444;font-size:13px;font-weight:500;text-transform:uppercase">
-        Elige un transporte
-      </div>
-      <div *ngIf="cuponData?.ok"
-        style="margin-left:10px;text-align:center;padding:5px;padding-left:10px;padding-right:10px;border-radius:15px;background:#df1f9f;font-size:14px;color:white;font-weight:500">
-        <span *ngIf="cuponData.cupon.tipo == 'PORCENTAJE'">{{cuponData.cupon.descuento}}%</span>
-        <span *ngIf="cuponData.cupon.tipo == 'DINERO'">${{cuponData.cupon.descuento}}</span>
-        descuento
-      </div>
+  <div *ngIf="model.status !== 'IN_PROGRESS'" style="padding:15px">
+
+    <div *ngIf="model.isCoupon"
+      style="width:100%;padding:7px;padding-left:15px;color:white;font-size:14px;background:#df1f9f">
+      Se aplicó la promoción
+      <span *ngIf="model.coupon.type == 'PORCENTAGE'">{{model.coupon.discount}}%</span>
+      <span *ngIf="model.coupon.type == 'CASH'">${{model.coupon.discount}}</span>
+      de descto.
     </div>
 
-    <div *ngIf="model.isInProgress" style="width:100%;">
+
+    <div *ngIf="model.status === 'NOT_STARTED'">
+
+      <div style="color:#666;font-weight:300">
+        Buenas tardes <span style="text-transform:capitalize"> {{usuario.nombre.split(' ')[0] }}</span>
+      </div>
+
+      <div
+        style="margin-bottom:10px;width:100%;display:flex;align-items:center;justify-content:space-between;align-items:center">
+        <div style="font-size:20px;font-weight:500;color:#333">
+          Dónde hacemos la entrega?
+        </div>
+      </div>
+
+      <div (click)="openUbicaciones()"
+        style="margin-bottom:10px;border:1px solid #9EDF1F;border-radius:15px;padding:12px;padding-left:10px;padding-right:10px;display:flex;align-items:center;justify-content:space-between">
+        <ion-icon name="flag" style="font-size:25px;color:#dfcf1f"></ion-icon>
+        <div style="width:80%">
+        </div>
+      </div>
+
+      <ion-item (click)="openUbicaciones()" lines="none">
+        <div slot="start"
+          style="width:30px;height:30px;background:#9EDF1F;border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <ion-icon name="home" style="font-size:22px;color:white"></ion-icon>
+        </div>
+        <div style="width:100%;overflow:hidden;height:20px">
+          Casa
+        </div>
+      </ion-item>
+
+      <ion-item (click)="openUbicaciones()" lines="none">
+        <div slot="start"
+          style="width:30px;height:30px;background:#9EDF1F;border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <ion-icon name="briefcase" style="font-size:21px;color:white"></ion-icon>
+        </div>
+        <div style="width:100%;overflow:hidden;height:20px">
+          Trabajo
+        </div>
+      </ion-item>
+
+    </div>
+
+
+
+    <div *ngIf="model.status === 'IN_SETUP'" style="width:100%;">
 
       <div (click)="vehicleToggle('bike')" class="holder" [ngClass]="{'holderActivo': model.vehicle === 'bike'}">
         <div style="display:flex;align-items:center;">
@@ -102,7 +128,7 @@
             Gratis
           </div>
           <div class="smallTres" [ngClass]="{'smallActivoTres': model.vehicle === 'bike'}">
-            {{model.trip_time.bike}} min
+            {{model.times.bike}} min
           </div>
         </div>
       </div>
@@ -130,7 +156,7 @@
             Gratis
           </div>
           <div class="smallTres" [ngClass]="{'smallActivoTres': model.vehicle === 'car'}">
-            {{model.trip_time.car}} min
+            {{model.times.car}} min
           </div>
         </div>
       </div>
@@ -153,118 +179,73 @@
           </div>
         </div>
         <div>
-          <div *ngIf="!distancia_excedida_moto && precioMoto_promo > 0" class="large"
+          <div *ngIf="model.prices.motorbike > 0" class="large"
             [ngClass]="{'largeActivo': model.vehicle === 'motorbike'}">
             ${{model.prices.motorbike}}
           </div>
-          <div *ngIf="!distancia_excedida_moto && precioMoto_promo == 0" class="large"
+          <div *ngIf="model.prices.motorbike == 0" class="large"
             [ngClass]="{'largeActivo': model.vehicle === 'motorbike'}">
             Gratis
           </div>
-          <div *ngIf="distancia_excedida_moto" class="large" [ngClass]="{'largeActivo': model.vehicle === 'motorbike'}">
-            --
-          </div>
           <div class="smallTres" [ngClass]="{'smallActivoTres': model.vehicle === 'motorbike'}">
-            {{model.trip_time.motorbike}} min
+            {{model.times.motorbike}} min
           </div>
         </div>
       </div>
 
-    </div>
 
-    <div *ngIf="model.trip.isStarting" style="color:#666;font-weight:300">
-      Buenas tardes <span style="text-transform:capitalize"> {{usuario.nombre.split(' ')[0] }}</span>
-    </div>
-
-    <div *ngIf="model.trip.isStarting"
-      style="margin-bottom:10px;width:100%;display:flex;align-items:center;justify-content:space-between;align-items:center">
-      <div style="font-size:20px;font-weight:500;color:#333">
-        Dónde hacemos la entrega?
-      </div>
-    </div>
-
-    <div *ngIf="model.trip.isStarting" (click)="openUbicaciones()"
-      style="margin-bottom:10px;border:1px solid #9EDF1F;border-radius:15px;padding:12px;padding-left:10px;padding-right:10px;display:flex;align-items:center;justify-content:space-between">
-      <ion-icon name="flag" style="font-size:25px;color:#dfcf1f"></ion-icon>
-      <div style="width:80%">
-      </div>
-    </div>
-
-    <ion-item *ngIf="model.trip.isStarting" (click)="openUbicaciones()" lines="none">
-      <div slot="start"
-        style="width:30px;height:30px;background:#9EDF1F;border-radius:50%;display:flex;align-items:center;justify-content:center">
-        <ion-icon name="home" style="font-size:22px;color:white"></ion-icon>
-      </div>
-      <div style="width:100%;overflow:hidden;height:20px">
-        Casa
-      </div>
-    </ion-item>
-
-    <ion-item *ngIf="model.trip.isStarting" (click)="openUbicaciones()" lines="none">
-      <div slot="start"
-        style="width:30px;height:30px;background:#9EDF1F;border-radius:50%;display:flex;align-items:center;justify-content:center">
-        <ion-icon name="briefcase" style="font-size:21px;color:white"></ion-icon>
-      </div>
-      <div style="width:100%;overflow:hidden;height:20px">
-        Trabajo
-      </div>
-    </ion-item>
-
-    <ion-item *ngIf="model.trip.isSettingUp" (click)="openMetodoPago()" lines="none">
-      <div style="color:#333;display:flex;align-items:center">
-        <ion-icon name="card" style="color:#999;margin-right:10px;font-size:20px"></ion-icon>
-        <div *ngIf="_control.metodo_pago == 'Efectivo'">
-          En efectivo
+      <ion-item (click)="openPaymentMethods()" lines="none">
+        <div style="color:#333;display:flex;align-items:center">
+          <ion-icon name="card" style="color:#999;margin-right:10px;font-size:20px"></ion-icon>
+          <div *ngIf="model.payment_method == 'CASH'">
+            En efectivo
+          </div>
+          <div *ngIf="model.payment_method == 'CARD'">
+            Con tarjeta
+          </div>
+          <ion-icon name="ios-arrow-down" style="color:#999;margin-left:5px"></ion-icon>
         </div>
-        <div *ngIf="_control.metodo_pago == 'Tarjeta'">
-          Con tarjeta
+      </ion-item>
+
+      <ion-button [disabled]="loadingRider" mode="ios" (click)="onConfirmRequest()" expand="block" color="secondary"
+        style="margin:15px;margin-top:0px">
+        <div style="font-size:20px;font-weight:600">
+          Confirmar envío
         </div>
-        <ion-icon name="ios-arrow-down" style="color:#999;margin-left:5px"></ion-icon>
-      </div>
-    </ion-item>
+      </ion-button>
 
-    <ion-button *ngIf="model.trip.isSettingUp" [disabled]="loadingRider" mode="ios" (click)="iniciarPedido()" expand="block"
-      color="secondary" style="margin:15px;margin-top:0px">
-      <div style="font-size:20px;font-weight:600">
-        Solicitar Rider
-      </div>
-    </ion-button>
-
+    </div>
   </div>
 
 
 
 
-
-
-
-
-  <div *ngIf="model.trip.isInProgress" style="padding:15px">
+  <div *ngIf="model.status === 'IN_PROGRESS'" style="padding:15px">
 
     <h5 style="margin-top:0">
-      Llega en {{tiempoLlegada}} min
+      Llega en {{15}} min
     </h5>
 
     <div style="margin-bottom:15px;font-size:18px;color:#444">
-      <div *ngIf="model.trip.step == 0">
+      <div *ngIf="model.step == 0">
         Viaje confirmado
       </div>
-      <div *ngIf="model.trip.step == 1">
+      <div *ngIf="model.step == 1">
         <span style="text-transform:capitalize;">
           {{rider.nombre.split(' ')[0]}}
         </span>
         está en camino al punto de inicio
       </div>
-      <div *ngIf="model.trip.step == 2">
+      <div *ngIf="model.step == 2">
         Vé al punto de inicio, el Rider ha llegado!
       </div>
-      <div *ngIf="model.trip.step == 3">
+      <div *ngIf="model.step == 3">
         <span style="text-transform:capitalize;">
           {{rider.nombre.split(' ')[0]}}
         </span>
         está en camino al punto de entrega
       </div>
-      <div *ngIf="model.trip.step == 4">
+      <div *ngIf="model.step == 4">
         Tu producto se está entregando
       </div>
     </div>

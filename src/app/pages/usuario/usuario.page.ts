@@ -30,12 +30,12 @@ export class UsuarioPage implements OnInit {
   getUsuario() {
 
     const token = this._auth.token;
-    const id = this._auth.usuario._id;
+    const id = this._auth.user._id;
 
     this._auth.getUser(token, id).then(usuario => {
       this.usuario = null;
       this.usuario = usuario;
-      this._auth.usuario = usuario;
+      this._auth.user = usuario;
       this.isLoading = false;
     });
   }

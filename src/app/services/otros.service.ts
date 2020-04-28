@@ -25,17 +25,17 @@ export class OtrosService {
 
     return new Promise((resolve, reject) => {
 
-      if (this._auth.usuario.role == 'USUARIO_ROLE') {
-        this._data.getPedidoActivo(this._auth.usuario._id).then((data: any) => {
+      if (this._auth.user.role == 'USUARIO_ROLE') {
+        this._data.getPedidoActivo(this._auth.user._id).then((data: any) => {
           this.pedido$.next(data);
           resolve();
         });
       }
 
-      if (this._auth.usuario.role == 'EMPRESA_ROLE') {
+      if (this._auth.user.role == 'EMPRESA_ROLE') {
 
         if (tipo == 'buscar_pedido_activo_mas_reciente') {
-          this._data.getPedidoActivo(this._auth.usuario._id).then((data: any) => {
+          this._data.getPedidoActivo(this._auth.user._id).then((data: any) => {
             this.pedido$.next(data);
             resolve();
           });

@@ -1,17 +1,37 @@
-import { Action } from '@ngrx/store'
+import { createAction, props } from '@ngrx/store';
+import { AuthData } from '../../models/Auth';
 
-import { AuthData } from '../../models/Auth'
+export const loadAuthData = createAction(
+    '[Auth] Load Auth Data'
+);
 
-export const SET_AUTHENTICATED = '[Auth] Set Authenticated'
-export const SET_UNAUTHENTICATED = '[Auth] Set Unauthenticated'
+export const loadStorage = createAction(
+    '[Auth] Load Storage'
+);
 
-export class SetAuthenticated implements Action {
-    readonly type = SET_AUTHENTICATED
-    constructor(public payload: AuthData) { }
-}
+export const logout = createAction(
+    '[Auth] Logout'
+);
 
-export class SetUnauthenticated implements Action {
-    readonly type = SET_UNAUTHENTICATED
-}
+export const setAuthenticated = createAction(
+    '[Auth] Set Unauthenticated',
+    props<{ payload: any }>()
+);
 
-export type AuthActions = SetAuthenticated | SetUnauthenticated;
+export const setUnauthenticated = createAction(
+    '[Auth] Set Unauthenticated'
+);
+
+export const updateUser = createAction(
+    '[Auth] Load Auth Data'
+);
+
+export const updateUserSuccess = createAction(
+    '[Auth] Load AuthData Success',
+    props<{ payload: AuthData }>()
+);
+
+export const updateUserError = createAction(
+    '[Auth] Load AuthData Error',
+    props<{ payload: any }>()
+);

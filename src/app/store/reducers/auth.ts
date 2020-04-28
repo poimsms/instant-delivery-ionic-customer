@@ -1,38 +1,56 @@
+import { createReducer, on } from '@ngrx/store';
+
 import {
-    AuthActions,
-    SET_AUTHENTICATED,
-    SET_UNAUTHENTICATED
+    loadAuthData,
+    loadStorage,
+    logout,
+    updateUser,
+    updateUserSuccess,
+    updateUserError,
+    setAuthenticated,
+    setUnauthenticated,
 } from '../actions/auth';
 
 export interface State {
     isAuth: boolean;
+    loading: boolean;
+    userUpdate: boolean;
     user: any;
     token: string;
 }
 
-const initialState = {
+const initialState: State = {
     isAuth: false,
+    loading: false,
+    userUpdate: false,
     user: null,
     token: null
 }
 
-export function authReducer(state = initialState, action: AuthActions) {
-    switch (action.type) {
-        case SET_AUTHENTICATED:
-            
-            return {
-                isAuth: true,
-                user: action.payload.user,
-                token: action.payload.token
-            }
+const _userReducer = createReducer(initialState,
 
-        case SET_UNAUTHENTICATED:
-            return initialState;
+    on(loadStorage, state => state),
 
-        default:
-            return state;
-    }
+    on(loadAuthData, state => ({ ...state, loading: true })),
+
+    on(setAuthenticated, (state, { payload }) => ({
+        ...state,
+        loading: false,
+        isAuth: true,
+        user: payload.user,
+        token: payload.token
+    })),
+
+    on(setUnauthenticated, state => initialState),
+
+    on(logout, state => ({ ...state, loading: true }))
+);
+
+
+export function userReducer(state, action) {
+    return _userReducer(state, action);
 }
+
 
 export const getIsAuth = (state: State) => state.isAuth;
 export const getUser = (state: State) => state.user;

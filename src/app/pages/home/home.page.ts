@@ -7,12 +7,12 @@ import { Subscription } from 'rxjs';
 import { RatingComponent } from 'src/app/components/rating/rating.component';
 import { PayComponent } from 'src/app/components/pay/pay.component';
 import { CallNumber } from '@ionic-native/call-number/ngx';
-import { Store } from '@ngrx/store';
 import messages from '../../utils/messages';
 import { RidersService } from 'src/app/services/riders.service';
 import markerImages from 'src/app/utils/marker-urls';
 import { TripService } from 'src/app/services/trip.service';
 
+import { Store } from '@ngrx/store';
 import * as fromMap from '../../store/reducers/map';
 import * as Trip from '../../store/actions/trip';
 import * as Map from '../../store/actions/map';
@@ -88,9 +88,9 @@ export class HomePage implements OnInit, OnDestroy {
     this.subToMap();
 
     this.subs.push(
-      this._trip.rider().subscribe(data => this.riderHandler(data)),
-      this._trip.rate().subscribe(data => this.ratingHandler(data)),
-      this._trip.coupon().subscribe(data => this.coupon = data),
+      this._trip.rider$.subscribe(x => this.riderHandler(x)),
+      this._trip.rate$.subscribe(x => this.ratingHandler(x)),
+      this._trip.coupon$.subscribe(x => this.coupon = x),
       this.store.select(fromMap.getMapState).subscribe(data => this.model = data)
     )
   }
@@ -106,7 +106,7 @@ export class HomePage implements OnInit, OnDestroy {
 
         const data: any = await this._trip.getDistanceAndTime(state.origin, state.destination);
 
-        const prices = await this._trip.getPrices(data.distance);
+        const prices = await this._data.getPrices({ distance: data.distance });
 
         const promo_prices = this._trip.applyCoupon(prices, this.coupon);
 
@@ -171,7 +171,7 @@ export class HomePage implements OnInit, OnDestroy {
     const { data } = await modal.onWillDismiss();
 
     if (!data) {
-      return this.cancelOnSetUpTrip();
+      return this.cancelSetUpTrip();
     }
 
     if (data.status === messages.payment.SUCCESS) {
@@ -189,11 +189,11 @@ export class HomePage implements OnInit, OnDestroy {
     }
 
     if (data.status === messages.payment.FAIL) {
-      this.cancelOnSetUpTrip();
+      this.cancelSetUpTrip();
     }
   }
 
-  async cancelOnSetUpTrip() {
+  async cancelSetUpTrip() {
     this.alert_pedido_cancelado();
     this.store.dispatch(new Map.InitMap)
     this.store.dispatch(new Trip.InitTrip)
@@ -207,7 +207,7 @@ export class HomePage implements OnInit, OnDestroy {
     this.store.dispatch(new Trip.InitTrip)
   }
 
-  openPayMethod() {
+  openPaymentMethods() {
     this.router.navigateByUrl('metodo-pago');
   }
 
@@ -280,7 +280,7 @@ export class HomePage implements OnInit, OnDestroy {
           text: 'Ok',
           role: 'cancel',
           cssClass: 'secondary',
-          handler: (blah) => {}
+          handler: (blah) => { }
         }
       ]
     });
@@ -320,13 +320,6 @@ export class HomePage implements OnInit, OnDestroy {
       position: 'middle'
     });
     toast.present();
-  }
-
-  presentCompraExitosa() {
-    this.graciasPorComprar = true;
-    setTimeout(() => {
-      this.graciasPorComprar = false;
-    }, 2000);
   }
 
   openMenu() {

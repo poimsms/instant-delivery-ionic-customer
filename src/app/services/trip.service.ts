@@ -1,5 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { DataService } from './data.service';
+import { AuthService } from './auth.service';
 
 declare var google: any;
 
@@ -10,22 +12,22 @@ export class TripService {
 
   service: any;
 
-  rate$ =  new BehaviorSubject({ok: false});
-  gps$ =  new BehaviorSubject({ok: false});
-  rider$ =  new BehaviorSubject({ok: false});
-  coupon$ =  new BehaviorSubject({ok: false});
+  rate$ = new BehaviorSubject({ ok: false });
+  gps$ = new BehaviorSubject({ ok: false });
+  rider$ = new BehaviorSubject({ ok: false });
+  coupon$ = new BehaviorSubject({ ok: false });
 
 
-  constructor() {
+  constructor(private _data: DataService, private _auth: AuthService) {
     this.service = new google.maps.DistanceMatrixService();
-   }
+  }
 
-   getDistanceAndTime(origin, destination) {
+  getDistanceAndTime(origin, destination) {
 
     const coors1 = new google.maps.LatLng(origin.lat, origin.lng);
     const coors2 = new google.maps.LatLng(destination.lat, destination.lng);
 
-     return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.service.getDistanceMatrix(
         {
           origins: [coors1],
@@ -44,51 +46,36 @@ export class TripService {
               car: Math.round(seconds / 60 / 1.15)
             }
           }
-          
+
           resolve(data)
         })
-     })
-   }
+    })
+  }
 
-   getPrices(distance) {
-
-   }
-
-   applyCoupon(prices, coupon) {
+  applyCoupon(prices, coupon) {
 
   }
 
-  loadTrip() {
-
+  async loadTrip() {
+    const res: any = await this._data.getActiveTrip(this._auth.user._id);
+    if (res.ok) this.rate$.next({ ok: true, ...res.coupon });
   }
 
   loadRider() {
 
   }
 
-  loadCoupon() {
-
+  async loadCoupon() {
+    console.log(this._auth.user, 'hmmmm')
+    const res: any = await this._data.getActiveCoupon(this._auth.user._id);
+    if (res.ok) this.rate$.next({ ok: true, ...res.coupon });
   }
 
-  loadRate() {
-
+  async loadRate() {
+    const res: any = await this._data.getActiveRating(this._auth.user._id);
+    if (res.ok) this.rate$.next({ ok: true, ...res.coupon });
   }
 
-  rate() {
-    return this.rate$;
-  }
-
-  rider() {
-    return this.rider$;
-  }
-
-  coupon() {
-    return this.coupon$;
-  }
-
-  gps() {
-    return this.rate$;
-  }
 
   cancelTrip(body) {
 

@@ -31,7 +31,7 @@ export class HistorialPage implements OnInit {
     
     this.isLoading = true;
 
-    this._data.getPedidos(this._auth.usuario._id, tipo).then((pedidos: any) => {
+    this._data.getPedidos(this._auth.user._id, tipo).then((pedidos: any) => {
       this.tipo = tipo;
       this.pedidos = [];
       this.pedidos = pedidos;

@@ -65,12 +65,10 @@ export class DataService {
     return this.http.get(url, { headers }).toPromise();
   }
 
-  getCuponActivo(id) {
+  getActiveCoupon(id) {
     const url = `${this._config.apiURL}/core/cupones-get-active-one?id=${id}`;
     const headers = new HttpHeaders({ token: this._auth.token, version: this._config.version });
-    this.http.get(url, { headers }).toPromise().then((data: any) => {
-      this.cuponData.next({ ok: data.ok, cupon: data.cupon, id: data.id });
-    });
+    return this.http.get(url, { headers }).toPromise();
   }
 
   addCupon(body) {
@@ -103,34 +101,10 @@ export class DataService {
     return this.http.put(url, body, { headers }).toPromise();
   }
 
-  cuotaPedidosProgramado(id, body) {
-    const url = `${this._config.apiURL}/core/cuota-pedidos-programado?id=${id}`;
-    const headers = new HttpHeaders({ token: this._auth.token, version: this._config.version });
-    return this.http.post(url, body, { headers }).toPromise();
-  }
-
   getNeerestRider(body) {
     const url = `${this._config.apiURL}/core/get-neerest-rider`;
     const headers = new HttpHeaders({ token: this._auth.token, version: this._config.version });
     return this.http.post(url, body, { headers }).toPromise();
-  }
-
-  creteCheckout(body) {
-    const url = `${this._config.apiURL}/core/checkout-create`;
-    const headers = new HttpHeaders({ token: this._auth.token, version: this._config.version });
-    return this.http.post(url, body, { headers }).toPromise();
-  }
-
-  getCheckout(id) {
-    const url = `${this._config.apiURL}/core/checkout-get?id=${id}`;
-    const headers = new HttpHeaders({ token: this._auth.token, version: this._config.version });
-    return this.http.get(url, { headers }).toPromise();
-  }
-
-  updateCheckout(id) {
-    const url = `${this._config.apiURL}/core/checkout-update?id=${id}`;
-    const headers = new HttpHeaders({ token: this._auth.token, version: this._config.version });
-    return this.http.get(url, { headers }).toPromise();
   }
 
   cancelarPedido(body) {
@@ -153,6 +127,18 @@ export class DataService {
 
   getLocation(id) {
     const url = `${this._config.apiURL}/core/location-get?id=${id}`;
+    const headers = new HttpHeaders({ token: this._auth.token, version: this._config.version });
+    return this.http.get(url, { headers }).toPromise();
+  }
+
+  getPrices(body) {
+    const url = `${this._config.apiURL}/core/price-get`;
+    const headers = new HttpHeaders({ token: this._auth.token, version: this._config.version });
+    return this.http.post(url, body, { headers }).toPromise();
+  }
+
+  getActiveTrip(id) {
+    const url = `${this._config.apiURL}/core/trip-active-get?id=${id}`;
     const headers = new HttpHeaders({ token: this._auth.token, version: this._config.version });
     return this.http.get(url, { headers }).toPromise();
   }

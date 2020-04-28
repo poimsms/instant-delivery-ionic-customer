@@ -128,7 +128,7 @@ export class DireccionesPage implements OnInit, OnDestroy {
   }
 
   async getWhatsapp() {
-    this.location = await this._data.getLocation(this._auth.usuario._id);
+    this.location = await this._data.getLocation(this._auth.user._id);
   }
 
   updateSearchResults(type) {
@@ -328,7 +328,7 @@ export class DireccionesPage implements OnInit, OnDestroy {
   }
 
   getUbicaciones() {
-    this._data.getUbicaciones(this._auth.usuario._id).then((data: any) => {
+    this._data.getUbicaciones(this._auth.user._id).then((data: any) => {
 
       if (!data.ok) {
         return;
@@ -357,7 +357,7 @@ export class DireccionesPage implements OnInit, OnDestroy {
       return;
     }
 
-    this._data.getUbicaciones(this._auth.usuario._id).then((data: any) => {
+    this._data.getUbicaciones(this._auth.user._id).then((data: any) => {
 
       if (!data.ok) {
         return this.openUbicacionModal(tipo, 'crear');

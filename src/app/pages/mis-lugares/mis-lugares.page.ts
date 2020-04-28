@@ -25,7 +25,7 @@ export class MisLugaresPage implements OnInit {
   }
 
   getUbicaciones() {
-    this._data.getUbicaciones(this._auth.usuario._id).then((data: any) => {
+    this._data.getUbicaciones(this._auth.user._id).then((data: any) => {
 
       if (!data.ok) {
         return;
@@ -43,7 +43,7 @@ export class MisLugaresPage implements OnInit {
 
   ubicacionHandler(tipo) {
 
-    this._data.getUbicaciones(this._auth.usuario._id).then((data: any) => {
+    this._data.getUbicaciones(this._auth.user._id).then((data: any) => {
 
       if (!data.ok) {
         return this.openUbicacionModal(tipo, 'crear');

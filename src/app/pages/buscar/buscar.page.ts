@@ -86,7 +86,7 @@ export class BuscarPage implements OnInit {
     if (this.position.ok) {
 
       const body: any = {};
-      body.usuario = this._auth.usuario._id;
+      body.usuario = this._auth.user._id;
 
       body[this.tipo] = {
         configurado: true,

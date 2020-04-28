@@ -26,15 +26,15 @@ export class ConfigService {
 
     switch (this.ENTORNO) {
       case 'DEV':
-        this.apiURL = `http://localhost:3000/v1.0.1`;
+        this.apiURL = `http://localhost:3000`;
         break;
 
       case 'PROD':
-        this.apiURL = `https://joopiterweb.com/v1.0.1`;
+        this.apiURL = `https://joopiterweb.com`;
         break;
 
       case 'TEST':
-        this.apiURL = `https://footballonapp.com/v1.0.1`;
+        this.apiURL = `https://footballonapp.com`;
         break;
     }
   }
@@ -86,7 +86,7 @@ export class ConfigService {
     }
 
     return new Promise((resolve, reject) => {
-      const url = `${serverURL}/api-version?version=${this.version}&app=clients`;
+      const url = `${serverURL}/api-version?version=${this.version}&app=CUSTOMER_MOBILE_APP`;
       this.http.get(url).toPromise().then(data => {
         resolve(data);
       });
